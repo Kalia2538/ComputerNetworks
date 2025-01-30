@@ -17,6 +17,10 @@
  * Return 0 on success, non-zero on failure
 */
 int client(char *server_ip, char *server_port) {
+  // open socket
+  // loop - while we haven't reached an eof
+    // take a chunk and send it to server
+    // ??? handle partial sends
     return 0;
 }
 
