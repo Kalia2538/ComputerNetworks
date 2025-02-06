@@ -29,9 +29,11 @@ int server(char *server_port) {
     char buff[RECV_BUFFER_SIZE];
     int s, new_s, buff_len;
     socklen_t addr_len;
+    // struct addrinfo hints;
     struct sockaddr_in sin;
     sin.sin_family = PF_INET;
-    sin.sin_port = server_port;
+    int portnum = atoi(server_port);
+    sin.sin_port = portnum;
     sin.sin_addr.s_addr = INADDR_ANY; // FIGURE OUT WHAT THIS MEANS
     int sockfd = socket(PF_INET, SOCK_STREAM, PF_UNSPEC); // DC PF_UNSPEC
 
