@@ -34,7 +34,7 @@ int server(char *server_port) {
     sin.sin_port = server_port;
     sin.sin_addr.s_addr = INADDR_ANY; // FIGURE OUT WHAT THIS MEANS
     int sockfd = socket(PF_INET, SOCK_STREAM, PF_UNSPEC); // DC PF_UNSPEC
-  
+
     int success = bind(sockfd, (struct sockaddr *) &sin, sizeof(sin) );
 
     listen(sockfd, QUEUE_LENGTH);
