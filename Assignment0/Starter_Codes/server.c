@@ -11,6 +11,14 @@
 
 #define QUEUE_LENGTH 10
 #define RECV_BUFFER_SIZE 2048
+struct socket_info
+{
+  // Server IP Address
+  int ip_address;
+  // TCP Port Number
+  int tcp_portnum;
+};
+
 
 /* TODO: server()
  * Open socket and wait for client to connect
@@ -18,6 +26,29 @@
  * Return 0 on success, non-zero on failure
 */
 int server(char *server_port) {
+    char buff[RECV_BUFFER_SIZE];
+    int s, new_s, buff_len;
+    socklen_t addr_len;
+    struct sockaddr_in sin;
+    sin.sin_family = PF_INET;
+    sin.sin_port = server_port;
+    sin.sin_addr.s_addr = INADDR_ANY; // FIGURE OUT WHAT THIS MEANS
+    int sockfd = socket(PF_INET, SOCK_STREAM, PF_UNSPEC); // DC PF_UNSPEC
+  
+    int success = bind(sockfd, (struct sockaddr *) &sin, sizeof(sin) );
+
+    listen(sockfd, QUEUE_LENGTH);
+  while (1)
+  {
+    new_s = accept(s, (struct sockaddr *) &sin, &addr_len);
+    while (buff_len = recv(new_s, buff, sizeof(buff), 0))
+    {
+      fputs(buff, stdout);
+    }
+    close(new_s);
+  }
+  
+
     return 0;
 }
 
