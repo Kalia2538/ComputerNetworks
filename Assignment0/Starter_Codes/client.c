@@ -17,7 +17,6 @@
  * Return 0 on success, non-zero on failure
 */
 int client(char *server_ip, char *server_port) {
-  // printf("made it to client function \n");
   struct sockaddr_in sin;
   int s;
   char buff[SEND_BUFFER_SIZE];
@@ -68,11 +67,9 @@ int client(char *server_ip, char *server_port) {
       if(val < 1) {
         perror("simplex-talk: send");
       }
-
-
-    close(sockfd);
+    
     }
-
+  close(sockfd);
   return 0;
 }
 
