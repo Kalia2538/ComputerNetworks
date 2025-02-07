@@ -20,7 +20,7 @@ int client(char *server_ip, char *server_port) {
   // printf("made it to client function \n");
   struct sockaddr_in sin;
   int s;
-  char buff[SEND_BUFFER_SIZE] = "";
+  char buff[SEND_BUFFER_SIZE];
   sin.sin_family = PF_INET;
   int portnum = atoi(server_port);
   sin.sin_port = portnum;

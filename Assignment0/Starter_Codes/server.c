@@ -27,7 +27,7 @@ struct socket_info
 */
 int server(char *server_port) {
   // printf("in the server function\n");
-  char buff[RECV_BUFFER_SIZE] = "";
+  char buff[RECV_BUFFER_SIZE];
   int s, new_s, buff_len;
   socklen_t addr_len;
   // struct addrinfo hints;
