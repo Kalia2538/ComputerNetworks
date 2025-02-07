@@ -21,51 +21,59 @@ int client(char *server_ip, char *server_port) {
   struct sockaddr_in sin;
   int s;
   char buff[SEND_BUFFER_SIZE];
-  sin.sin_family = AF_INET;
-  int portnum = atoi(server_port);
-  sin.sin_port = portnum;
-  sin.sin_addr.s_addr = atoi(server_ip); // FIGURE OUT WHAT THIS MEANS
-  // open socket
-  int sockfd = socket(AF_INET, SOCK_STREAM, 0); // DC PF_UNSPEC
-  // if
-  // printf("opened the socket \n");
-  // printf("error = -1\n");
-  // char str1[20]; // Ensure it has enough space
-  // printf("value = ");
-  // printf("%d", sockfd);
-  // printf(" end\n");
-  // printf(sockfd);
-  // active open
-  // int con_estab = connect(sockfd, (struct sockaddr *) &sin, sizeof(sin) );
-  if (connect(sockfd, (struct sockaddr *) &sin, sizeof(sin) ) < 0) {
-    perror("simplex-talk: connect");
-    close(sockfd);
-    exit(1);
-  }
-  // printf("success = 0, fail = -1\n");
-  // char str[20]; // Ensure it has enough space
-  // printf("%d", con_estab);
-  // printf(con_estab);
-  // printf("\n");
-  int x = 0;
-  // printf(fgets(buff, sizeof(buff), stdin));
-  while ((x = fread(buff, 1, SEND_BUFFER_SIZE, stdin)) > 0) {
+  // sin.sin_family = AF_INET;
+  // int portnum = atoi(server_port);
+  // sin.sin_port = portnum;
+  // sin.sin_addr.s_addr = atoi(server_ip); // FIGURE OUT WHAT THIS MEANS
+  // // open socket
+  // int sockfd = socket(AF_INET, SOCK_STREAM, 0); // DC PF_UNSPEC
+  ////////
+  int sockfd, numbytes;  
+    char buf[SEND_BUFFER_SIZE];
+    struct addrinfo hints, *servinfo, *p;
+    int rv;
+    memset(&hints, 0, sizeof (hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((rv = getaddrinfo(server_ip, server_port, &hints, &servinfo)) != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        return 1;
+    }
+
+    // loop through all the results and connect to the first we can
+    for(p = servinfo; p != NULL; p = p->ai_next) {
+        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+                p->ai_protocol)) == -1) {
+            perror("client: socket");
+            continue;
+        }
+
+        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            perror("client: connect");
+            continue;
+        }
+
+        break;
+
+        if (p == NULL) {
+            fprintf(stderr, "client: failed to connect\n");
+            return 2;
+        }
+    }
+    int x;
+    while ((x = fread(buff, 1, SEND_BUFFER_SIZE, stdin)) > 0) {
       int val = send(sockfd, buff, x, 0);
       if(val < 1) {
         perror("simplex-talk: send");
       }
-    // buff[SEND_BUFFER_SIZE-1] = '\0';
-    
-    // printf("num of sent bytes: ");
-    // printf("%d", val);
-    // printf("\n");
-  }
 
-  // loop - while we haven't reached an eof
-    // take a chunk and send it to server
-    // ??? handle partial sends
+
     close(sockfd);
-    return 0;
+    }
+
+  return 0;
 }
 
 /*
