@@ -80,7 +80,7 @@ int server(char *server_port) {
     int abc = 1;
     while (abc)
     {
-      fflush(stdout);
+      // fflush(stdout);
       // fputs(buff, stdout);
       printf("%s", buff);
       fflush(stdout);
