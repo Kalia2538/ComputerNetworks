@@ -21,7 +21,7 @@ int client(char *server_ip, char *server_port) {
   struct sockaddr_in sin;
   int s;
   char buff[SEND_BUFFER_SIZE];
-  sin.sin_family = PF_INET;
+  sin.sin_family = AF_INET;
   int portnum = atoi(server_port);
   sin.sin_port = portnum;
   sin.sin_addr.s_addr = atoi(server_ip); // FIGURE OUT WHAT THIS MEANS
@@ -49,15 +49,11 @@ int client(char *server_ip, char *server_port) {
   // printf("\n");
   int x = 0;
   // printf(fgets(buff, sizeof(buff), stdin));
-  while (x = fread(buff, 1, SEND_BUFFER_SIZE, stdin)) {
-    if (x) {
-      int len = strlen(buff) + 1;
-      // printf(buff);
+  while ((x = fread(buff, 1, SEND_BUFFER_SIZE, stdin)) > 0) {
       int val = send(sockfd, buff, x, 0);
       if(val < 1) {
         perror("simplex-talk: send");
       }
-    }
     // buff[SEND_BUFFER_SIZE-1] = '\0';
     
     // printf("num of sent bytes: ");
