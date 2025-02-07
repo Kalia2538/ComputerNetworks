@@ -72,17 +72,17 @@ int server(char *server_port) {
     //   printf("%s", buff);
     //   // fputs(buff, stdout);
     // }
-    buff_len = recv(new_s, buff, sizeof(buff), 0);
+    int abc = recv(new_s, buff, sizeof(buff), 0);
     // printf("\n new first buff_len ");
     // printf("%d\n", buff_len);
     // printf("this is buff: ");
     // printf("%s", buff);
-    int abc = 1;
     while (abc)
     {
       // fflush(stdout);
       // fputs(buff, stdout);
-      printf("%s", buff);
+      fwrite(buff, 1, abc, stdout);
+      // printf("%s", buff);
       fflush(stdout);
 
       // fputs(buff, stdout);

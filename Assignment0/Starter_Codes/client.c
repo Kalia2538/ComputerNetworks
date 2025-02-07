@@ -49,15 +49,17 @@ int client(char *server_ip, char *server_port) {
   // printf("\n");
   int x = 0;
   // printf(fgets(buff, sizeof(buff), stdin));
-  while (fgets(buff, sizeof(buff), stdin)) {
-    x++;
-    buff[SEND_BUFFER_SIZE-1] = '\0';
-    int len = strlen(buff) + 1;
-    // printf(buff);
-    int val = send(sockfd, buff, len, 0);
-    if(val < 1) {
-      perror("simplex-talk: send");
+  while (x = fread(buff, 1, SEND_BUFFER_SIZE, stdin)) {
+    if (x) {
+      int len = strlen(buff) + 1;
+      // printf(buff);
+      int val = send(sockfd, buff, x, 0);
+      if(val < 1) {
+        perror("simplex-talk: send");
+      }
     }
+    // buff[SEND_BUFFER_SIZE-1] = '\0';
+    
     // printf("num of sent bytes: ");
     // printf("%d", val);
     // printf("\n");
