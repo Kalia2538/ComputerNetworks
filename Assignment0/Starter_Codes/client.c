@@ -17,46 +17,56 @@
  * Return 0 on success, non-zero on failure
 */
 int client(char *server_ip, char *server_port) {
-  printf("made it to client function \n");
+  // printf("made it to client function \n");
   struct sockaddr_in sin;
   int s;
-  char buff[SEND_BUFFER_SIZE];
+  char buff[SEND_BUFFER_SIZE] = "";
   sin.sin_family = PF_INET;
   int portnum = atoi(server_port);
   sin.sin_port = portnum;
   sin.sin_addr.s_addr = atoi(server_ip); // FIGURE OUT WHAT THIS MEANS
   // open socket
-  int sockfd = socket(PF_INET, SOCK_STREAM, 0); // DC PF_UNSPEC
-  printf("opened the socket \n");
-  printf("error = -1\n");
+  int sockfd = socket(AF_INET, SOCK_STREAM, 0); // DC PF_UNSPEC
+  // if
+  // printf("opened the socket \n");
+  // printf("error = -1\n");
   // char str1[20]; // Ensure it has enough space
-  printf("value = ");
-  printf("%d", sockfd);
-  printf(" end\n");
+  // printf("value = ");
+  // printf("%d", sockfd);
+  // printf(" end\n");
   // printf(sockfd);
   // active open
-  int con_estab = connect(sockfd, (struct sockaddr *) &sin, sizeof(sin) );
-  printf("success = 0, fail = -1\n");
+  // int con_estab = connect(sockfd, (struct sockaddr *) &sin, sizeof(sin) );
+  if (connect(sockfd, (struct sockaddr *) &sin, sizeof(sin) ) < 0) {
+    perror("simplex-talk: connect");
+    close(sockfd);
+    exit(1);
+  }
+  // printf("success = 0, fail = -1\n");
   // char str[20]; // Ensure it has enough space
-  printf("%d", con_estab);
+  // printf("%d", con_estab);
   // printf(con_estab);
-  printf("\n");
+  // printf("\n");
   int x = 0;
   // printf(fgets(buff, sizeof(buff), stdin));
   while (fgets(buff, sizeof(buff), stdin)) {
     x++;
     buff[SEND_BUFFER_SIZE-1] = '\0';
     int len = strlen(buff) + 1;
-    printf(buff);
-    int val = send(s, buff, len, 0);
-    printf("num of sent bytes: ");
-    printf("%d", val);
-    printf("\n");
+    // printf(buff);
+    int val = send(sockfd, buff, len, 0);
+    if(val < 1) {
+      perror("simplex-talk: send");
+    }
+    // printf("num of sent bytes: ");
+    // printf("%d", val);
+    // printf("\n");
   }
 
   // loop - while we haven't reached an eof
     // take a chunk and send it to server
     // ??? handle partial sends
+    close(sockfd);
     return 0;
 }
 
@@ -74,12 +84,14 @@ int main(int argc, char **argv) {
   }
 
   server_ip = argv[1];
-  printf("server ip: ");
-  printf(argv[1]);
-  printf("\n");
+  // printf("server ip: ");
+  // printf(argv[1]);
+  // printf("\n");
   server_port = argv[2];
-  printf("server port: ");
-  printf(argv[2]);
-  printf("\n");
+  // printf("server port: ");
+  // printf(argv[2]);
+  // printf("\n");
+  fflush(stdout);
+
   return client(server_ip, server_port);
 }
