@@ -81,8 +81,8 @@ int server(char *server_port) {
     while (abc)
     {
       fflush(stdout);
-      fputs(buff, stdout);
-      // printf("%s", buff);
+      // fputs(buff, stdout);
+      printf("%s", buff);
       fflush(stdout);
 
       // fputs(buff, stdout);
