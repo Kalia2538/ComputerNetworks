@@ -33,7 +33,7 @@ int server(char *server_port) {
   // struct addrinfo hints;
   struct sockaddr_in sin;
   // struct getaddr
-  sin.sin_family = PF_INET;
+  sin.sin_family = AF_INET;
   int portnum = atoi(server_port);
   // printf("after atoi - port \n");
   sin.sin_port = portnum;
@@ -77,7 +77,7 @@ int server(char *server_port) {
     // printf("%d\n", buff_len);
     // printf("this is buff: ");
     // printf("%s", buff);
-    while ((abc = recv(new_s, buff, sizeof(buff), 0)) > 0)
+    while ((abc = recv(new_s, buff, RECV_BUFFER_SIZE, 0)) > 0)
     {
       // fflush(stdout);
       // fputs(buff, stdout);
