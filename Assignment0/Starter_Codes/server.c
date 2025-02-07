@@ -38,7 +38,7 @@ int server(char *server_port) {
   // printf("after atoi - port \n");
   sin.sin_port = portnum;
   // printf("after sin_port \n");
-  sin.sin_addr.s_addr = atoi("127.9.0.1"); // FIGURE OUT WHAT THIS MEANS
+  sin.sin_addr.s_addr = atoi("127.0.0.1"); // FIGURE OUT WHAT THIS MEANS
   // printf("after ip -- s_addr \n");
   int sockfd = socket(AF_INET, SOCK_STREAM, 0); // DC PF_UNSPEC
   // printf("opened the socket \n");
@@ -72,12 +72,12 @@ int server(char *server_port) {
     //   printf("%s", buff);
     //   // fputs(buff, stdout);
     // }
-    int abc = recv(new_s, buff, sizeof(buff), 0);
+    int abc;
     // printf("\n new first buff_len ");
     // printf("%d\n", buff_len);
     // printf("this is buff: ");
     // printf("%s", buff);
-    while (abc)
+    while ((abc = recv(new_s, buff, sizeof(buff), 0)) > 0)
     {
       // fflush(stdout);
       // fputs(buff, stdout);
@@ -86,7 +86,6 @@ int server(char *server_port) {
       fflush(stdout);
 
       // fputs(buff, stdout);
-      abc = recv(new_s, buff, sizeof(buff), 0);
     }
     close(new_s);
   }
