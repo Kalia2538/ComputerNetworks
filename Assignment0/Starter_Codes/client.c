@@ -17,27 +17,54 @@
  * Return 0 on success, non-zero on failure
 */
 int client(char *server_ip, char *server_port) {
-  struct sockaddr_in sin;
+
   int s;
   char buff[SEND_BUFFER_SIZE];
-  sin.sin_family = PF_INET;
-  sin.sin_port = server_port;
-  sin.sin_addr.s_addr = INADDR_ANY; // FIGURE OUT WHAT THIS MEANS
-  // open socket
-  int sockfd = socket(PF_INET, SOCK_STREAM, PF_UNSPEC); // DC PF_UNSPEC
-  // active open
-  int con_estab = connect(sockfd, (struct sockaddr *) &sin, sizeof(sin) );
 
-  while (fgets(buff, sizeof(buff), stdin)) {
-    buff[SEND_BUFFER_SIZE-1] = '\0';
-    int len = strlen(buff) + 1;
-    send(s, buff, len, 0);
+  int sockfd, numbytes;  
+  char buf[SEND_BUFFER_SIZE];
+  struct addrinfo hints, *servinfo, *p;
+  int rv;
+  memset(&hints, 0, sizeof (hints));
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  if ((rv = getaddrinfo(server_ip, server_port, &hints, &servinfo)) != 0) {
+      fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+      return 1;
   }
 
-  // loop - while we haven't reached an eof
-    // take a chunk and send it to server
-    // ??? handle partial sends
-    return 0;
+  for(p = servinfo; p != NULL; p = p->ai_next) {
+    if ((sockfd = socket(p->ai_family, p->ai_socktype,
+      p->ai_protocol)) == -1) {
+      perror("client: socket");
+      continue;
+    }
+
+    if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+      close(sockfd);
+        perror("client: connect");
+          continue;
+    }
+
+    break;
+
+    if (p == NULL) {
+        fprintf(stderr, "client: failed to connect\n");
+        return 2;
+    }
+  }
+
+  int x;
+  while ((x = fread(buff, 1, SEND_BUFFER_SIZE, stdin)) > 0) {
+    int val = send(sockfd, buff, x, 0);
+    if(val < 1) {
+      perror("simplex-talk: send");
+    }  
+  }
+
+  close(sockfd);
+  return 0;
 }
 
 /*
@@ -53,7 +80,9 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  server_ip = argv[1];
+  server_ip = argv[1];  
   server_port = argv[2];
+  fflush(stdout);
+
   return client(server_ip, server_port);
 }
