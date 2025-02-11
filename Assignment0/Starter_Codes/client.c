@@ -43,8 +43,8 @@ int client(char *server_ip, char *server_port) {
 
     if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
       close(sockfd);
-        perror("client: connect");
-          continue;
+      perror("client: connect");
+      continue;
     }
 
     break;
