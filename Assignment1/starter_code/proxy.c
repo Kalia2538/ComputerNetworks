@@ -101,8 +101,28 @@ int proxy(char *proxy_port) {
       // bad request
       return -1;
     }
-
     // should have a fully parsed request by here
+
+    // establish connection to the server (i think i get value from the parsedReq variable)
+
+    // format a ParsedRequest struct with info to send to server (mostly copying w/ some changes)
+
+    // unparse request => string ...
+
+    // send string to the server
+
+    // wait for response
+
+    // parse request 
+
+    // close connection to server (not sure if necessary for this assignment)
+
+    // make request to send to the client (mostly copying with some changes)
+
+    // unparse the newly made request
+
+    // send unparsed request to the client
+
 
     
 
