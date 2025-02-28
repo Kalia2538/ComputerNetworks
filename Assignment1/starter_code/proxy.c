@@ -77,9 +77,8 @@ int proxy(char *proxy_port) {
   
 
   socklen_t sin_size;
-  int new_fd;
-  while(1) {  // main accept() loop
-    
+  int new_fd; // fd for accepted client
+  while(1) {    
     sin_size = sizeof(their_addr);    
     new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
     
@@ -88,7 +87,7 @@ int proxy(char *proxy_port) {
       continue;
     }
 
-    printf("connecction acquired\n");
+    printf("client connected to proxy\n");
 
     // start the forking process here
     // for now, we will only do one conection at a time
@@ -107,7 +106,7 @@ int proxy(char *proxy_port) {
     while (1) {
       abc = recv(new_fd, buff, MAX_REQ_LEN, 0);
       if (abc > 0) {
-        printf(" this is buff: %s\0\n",buff);
+        // printf(" this is buff: %s\0\n",buff);
         break;
       }
     }
@@ -151,7 +150,7 @@ int proxy(char *proxy_port) {
     hints2.ai_family = AF_UNSPEC;
     hints2.ai_socktype = SOCK_STREAM;
     int sockfd2;
-    printf("about to getaddrinfo\n");
+    
     int rv2;
     if ((rv2 = getaddrinfo(parsedReq->host, parsedReq->port, &hints2, &servinfo2)) != 0) { //update thissss
       fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv2));
@@ -182,15 +181,11 @@ int proxy(char *proxy_port) {
     }
     printf("connecting to server succeeded\n");
 
-    // int val = send(sockfd, buff, x, 0);
-    // format a ParsedRequest struct with info to send to server (mostly copying w/ some changes)
-    int a = send(sockfd2, buff, abc+4, 0); // i didnt use unparse, but it still works...ig
+    int a = send(sockfd2, buff, abc+4, 0); // send request to the server
     if (a == -1) {
       printf("error with sending request");
     }
-    // unparse request => string ...
-
-    // send string to the server
+    
 
     // wait for response
     int recd;
@@ -198,34 +193,18 @@ int proxy(char *proxy_port) {
     while (1) {
       recd = recv(sockfd2, servbuff, MAX_REQ_LEN, 0);
       if (recd > 0) {
-        printf(" this is buff: %s\n",servbuff);
+        // printf(" this is buff: %s\n",servbuff);
         break;
       }
     }
     printf("recieved the response from the server!\n");
 
-    // check the status line
-    // check the header
 
-
-    // strcat(servbuff, "\r\n\r\n"); 
-    struct ParsedRequest* x = ParsedRequest_create();
-    val = ParsedRequest_parse(x, servbuff, recd);
-    if(val == -1) {
-      printf("error\n");
-    }
+    // close connection to server (not sure if necessary for this assignment)'
+    close(sockfd2);
     
-
-    // parse request 
-
-    // close connection to server (not sure if necessary for this assignment)
-
-    // make request to send to the client (mostly copying with some changes)
-
-    // unparse the newly made request
-
-    // send unparsed request to the client
-
+    // send response to the client
+    int w = send(new_fd, servbuff, recd, 0);
 
     
 
