@@ -387,6 +387,7 @@ ParsedRequest_parse(struct ParsedRequest * parse, const char *buf,
      }
      memcpy(parse->buf, tmp_buf, index-tmp_buf);
      parse->buf[index-tmp_buf] = '\0';
+     printf("this is the parse->buf: %s\n", parse->buf);
 
      /* Parse request line */
      parse->method = strtok_r(parse->buf, " ", &saveptr);
@@ -397,8 +398,10 @@ ParsedRequest_parse(struct ParsedRequest * parse, const char *buf,
 	  parse->buf = NULL;
 	  return -1;
      }
+     printf("thsi is parse->method %s\n", parse->method);
 
      full_addr = strtok_r(NULL, " ", &saveptr);
+     printf("this is full addr %s\n", full_addr);
 
      if (full_addr == NULL) {
 	  debug( "invalid request line, no full address\n");
@@ -409,6 +412,7 @@ ParsedRequest_parse(struct ParsedRequest * parse, const char *buf,
      }
 
      parse->version = full_addr + strlen(full_addr) + 1;
+     printf("this is the version %s\n", parse->version);
 
      if (parse->version == NULL) {
 	  debug( "invalid request line, missing version\n");
