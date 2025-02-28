@@ -129,7 +129,7 @@ int proxy(char *proxy_port) {
       // int randomc = ParsedRequest_printRequestLine(parsedReq, temp1, MAX_REQ_LEN, temp)
       if (val == -1) {
         printf("bad request");
-        return -1;
+        // return -1;
         // TODO: DO SOME KIND OF ERROR STUFF
       } else {
       }
