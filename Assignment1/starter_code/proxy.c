@@ -88,14 +88,8 @@ int proxy(char *proxy_port) {
       continue;
     }
 
-    printf("client connected to proxy\n");
-    proc_num++;
-    printf("this val b4 %d\n", proc_num);
     int pid = fork();
-    proc_num++;
-    printf("this value after %d\n", proc_num);
     if (pid == 0) { // child process
-      printf("the process number is this: %d\n", pid);
       struct ParsedRequest* parsedReq = ParsedRequest_create();
       char buff[MAX_REQ_LEN];
       int val = -91;
@@ -135,9 +129,9 @@ int proxy(char *proxy_port) {
       // int randomc = ParsedRequest_printRequestLine(parsedReq, temp1, MAX_REQ_LEN, temp)
       if (val == -1) {
         printf("bad request");
+        return -1;
         // TODO: DO SOME KIND OF ERROR STUFF
       } else {
-        printf("successfully parsed the message!!!");
       }
       
       // should have a fully parsed request by here
@@ -162,7 +156,6 @@ int proxy(char *proxy_port) {
       }
       
       // establishing connection to the server
-      printf("about to enter for loop to establish connection to the server\n");
       for(p2 = servinfo2; p2 != NULL; p2 = p2->ai_next) {
         if ((sockfd2 = socket(p2->ai_family, p2->ai_socktype,
           p2->ai_protocol)) == -1) {
@@ -183,7 +176,7 @@ int proxy(char *proxy_port) {
             return 2;
         }
       }
-      printf("connecting to server succeeded\n");
+      
 
       int a = send(sockfd2, buff, abc+4, 0); // send request to the server
       if (a == -1) {
@@ -201,7 +194,7 @@ int proxy(char *proxy_port) {
           break;
         }
       }
-      printf("recieved the response from the server!\n");
+      
 
 
       // close connection to server (not sure if necessary for this assignment)'
