@@ -104,10 +104,10 @@ int proxy(char *proxy_port) {
       // run until we recieve a message
       while (total_bytes < MAX_REQ_LEN) { // continuously recieve data from client --- then check for \r\n\r\n
         abc = recv(new_fd, buff+total_bytes, MAX_REQ_LEN - total_bytes, 0);
-        printf("recieved from the client %s\n", buff);
+        // printf("recieved from the client %s\n", buff);
         total_bytes += abc;
-        if (strstr(buff, "\r\n\r\n")) {
-          printf("found end of message\n");
+        if (strstr(buff, "\r\n")) {
+          // printf("found end of message\n");
           break;
           // found end of message
         }
@@ -119,11 +119,20 @@ int proxy(char *proxy_port) {
       
       // add ending
       // strcat(buff, "\r\n\r\n"); /// might be better to use memcopy here
-      val = ParsedRequest_parse(parsedReq, buff, abc);
+      memcpy(buff+abc, "\r\n", 2);
+      val = ParsedRequest_parse(parsedReq, buff, abc + 2);
       // change the header
+      if(ParsedHeader_set(parsedReq, "Connection", "close") != 0) {
+        printf("issue with connection header\n");
+        return -1;
+      }
+      if (ParsedHeader_set(parsedReq, "Host", parsedReq->host) != 0) {
+        printf("issue with host header\n");
+        return -1;
+      }
       ParsedHeader_set(parsedReq, "Connection", "close");
       ParsedHeader_set(parsedReq, "Host", parsedReq->host);
-
+      // printf("updated the headers\n");
 
       
       // printf("parsed the request\n");
@@ -168,32 +177,36 @@ int proxy(char *proxy_port) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv2));
         return 1;
       }
+      // printf("rv2\n");
       
       // establishing connection to the server
-      
-      if ((sockfd2 = socket(p2->ai_family, p2->ai_socktype,
-        p2->ai_protocol)) == -1) {
-        perror("client: socket");
-        continue;
-      }
-  
-      if (connect(sockfd2, p2->ai_addr, p2->ai_addrlen) == -1) {
-        close(sockfd2);
-          perror("client: connect");
-            continue;
-      }
-  
-      // break;
-  
-      if (p2 == NULL) { // dc this line
-          fprintf(stderr, "client: failed to connect\n");
-          return 2;
-      }
-      
+      for(p2 = servinfo2; p2 != NULL; p2 = p2->ai_next) {
+        if ((sockfd2 = socket(p2->ai_family, p2->ai_socktype,
+          p2->ai_protocol)) == -1) {
+          perror("client: socket");
+          continue;
+        }
+        // printf("socket\n");
+    
+        if (connect(sockfd2, p2->ai_addr, p2->ai_addrlen) == -1) {
+          close(sockfd2);
+            perror("client: connect");
+              continue;
+        }
+    
+        // break;
+    
+        if (p2 == NULL) { // dc this line
+            fprintf(stderr, "client: failed to connect\n");
+            return 2;
+        }
+    } 
+      // printf("connected with the server\n");
       
       char unBuff[MAX_REQ_LEN];
       size_t unBuff_len =ParsedRequest_totalLen(parsedReq);
       ParsedRequest_unparse(parsedReq, unBuff, unBuff_len);
+      // printf("successful unparse\n");
       ParsedRequest_destroy(parsedReq);
       int a = send(sockfd2, unBuff, unBuff_len, 0); // send request to the server
       if (a == -1) {
@@ -210,16 +223,18 @@ int proxy(char *proxy_port) {
           // printf(" this is buff: %s\n",servbuff);
           break;
         }
+        send(new_fd, servbuff, recd, 0);
       }
 
-      
+      // printf("recieved from server\n");
 
 
       // close connection to server (not sure if necessary for this assignment)'
       close(sockfd2);
       
       // send response to the client
-      int w = send(new_fd, servbuff, recd, 0);     
+      // int w = send(new_fd, servbuff, recd, 0);   
+      // printf("sent to the client :)\n");  
 
     
     }   
