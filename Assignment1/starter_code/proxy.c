@@ -68,7 +68,7 @@ int proxy(char *proxy_port) {
     
     if (new_fd < 0) {
       perror("accept");
-      continue;
+      exit(1);
     }
     printf("connected to the client\n");
 
@@ -148,7 +148,7 @@ int proxy(char *proxy_port) {
       
       int num;
       if ((num = connect(sockfd2, (struct sockaddr *) &server_ad, sizeof(server_ad))) < 0) {
-        printf("%s\n", num);
+        printf("%d\n", num);
         close(sockfd2);
         perror("client: connect");
         fflush(stdout);
