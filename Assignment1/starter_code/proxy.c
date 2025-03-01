@@ -42,6 +42,7 @@ int proxy(char *proxy_port) {
   // establishing socket connection
   if (sockfd <0) {
       perror("server: socket");
+      return -1;
   }
   printf("sockfd = %d\n", sockfd);
 
@@ -59,7 +60,7 @@ int proxy(char *proxy_port) {
   int l = -91;
   if (((l = listen(sockfd, 10)) == -1)) { // QUESTION: what should our queue length be?
     perror("listen");
-    exit(1);
+    return -1;
   }
   printf("after listen\n");
   
@@ -69,7 +70,7 @@ int proxy(char *proxy_port) {
   while(1) {    
     if((new_fd = accept(sockfd, (struct sockaddr *)&server, &x)) < 0) {
       perror("accept: ");
-      exit(1);
+      return -1;
     }
     printf("this is new_fd: %d\n", new_fd);
     printf("connected to the client\n");
@@ -118,6 +119,7 @@ int proxy(char *proxy_port) {
       
       if (val == -1) {
         printf("bad request");
+        return -1;
       }      
 
       // struct addrinfo hints2;
@@ -141,6 +143,7 @@ int proxy(char *proxy_port) {
       sockfd2 = socket(AF_INET, SOCK_STREAM, 0);
       if (sockfd2 < 0) {
         perror("client: socket");
+        return -1;
       }
       printf("this is sockfd2: %d\n", sockfd2);
       
@@ -154,6 +157,7 @@ int proxy(char *proxy_port) {
         close(sockfd2);
         perror("client: connect");
         fflush(stdout);
+        return -1;
       }
 
       printf("connect succeeded\n");
@@ -192,6 +196,7 @@ int proxy(char *proxy_port) {
       int a = send(sockfd2, unBuff, unBuff_len, 0); // send request to the server
       if (a == -1) {
         printf("error with sending request");
+        return -1;
       }
   
       // printf("connected with the server\n");
@@ -214,7 +219,7 @@ int proxy(char *proxy_port) {
         recd = recv(sockfd2, servbuff, MAX_REQ_LEN, 0);
         if (recd <= 0) {
           // printf(" this is buff: %s\n",servbuff);
-          break;
+          return -1;
         }
         send(new_fd, servbuff, recd, 0);
       }
