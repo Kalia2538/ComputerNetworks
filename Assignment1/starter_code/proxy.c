@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <netinet/tcp.h>
 
-/* TODO: proxy()
+/* TODO: proxy() == MAKE SURE TO CLOSE YOUR SOCKETS!!!!
  * Establish a socket connection to listen for incoming connections.
  * Accept each client request in a new process.
  * Parse header of request and get requested URL.
@@ -28,47 +28,52 @@
 
 int proxy(char *proxy_port) {
   int proc_num = 0;
-  struct addrinfo hints;
-  struct addrinfo *servinfo, *p;
-  struct sockaddr_storage their_addr; // connector's address information
-
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
+  
+  // struct addrinfo hints;
+  // struct addrinfo *servinfo, *p;
+  // struct sockaddr_storage their_addr; // connector's address information
+  struct sockaddr_in server;
+  socklen_t x = sizeof(server);
+  // printf("1\n");
+  memset(&server, 0, sizeof(server));
+  
+  // printf("extra\n");
+  // p->ai_family = AF_INET;
+  // printf("a\n");
+  // p->ai_socktype = SOCK_STREAM;
+  // printf("b\n");
+  // p->ai_flags = AI_PASSIVE;
+  // printf("c\n");
+  // p->ai_addr = INADDR_ANY;
+  // printf("d\n");
   
   
-  int rv1;
-  if ((rv1 = getaddrinfo(NULL, proxy_port, &hints, &servinfo)) != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv1));
-    return 1;
-  }
-
+  // int rv1;
+  // if ((rv1 = getaddrinfo(NULL, proxy_port, &hints, &servinfo)) != 0) {
+  //   fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv1));
+  //   return 1;
+  // }
+  printf("2\n");
   int sockfd;
   int yes = 1;
-
+  sockfd = socket(AF_INET, SOCK_STREAM,0);
   // establishing socket connection
-  for(p = servinfo; p != NULL; p = p->ai_next) {
-    if ((sockfd = socket(p->ai_family, p->ai_socktype,
-      p->ai_protocol)) == -1) {
+  if (sockfd <0) {
       perror("server: socket");
-      continue;
-    }
-
-    int set;
-    if ((set = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,sizeof(int))) == -1) {
-      perror("setsockopt");
-      exit(1);
-    }
-    
-    int b;
-    if ((b = bind(sockfd, p->ai_addr, p->ai_addrlen)) == -1) {
-      close(sockfd);
-      perror("server: bind");
-      continue;
-    }
-    break;
   }
+  printf("socket val is %d\n", sockfd);
+  fflush(stdout);
+
+  server.sin_family = AF_INET;
+  server.sin_addr.s_addr = INADDR_ANY;
+  server.sin_port = htons(atoi(proxy_port));
+  if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
+    // close(sockfd);
+    perror("server: bind");
+    fflush(stdout);
+  }
+  printf("bind");
+  fflush(stdout);
 
   // listening for client connections
   int l = -91;
@@ -81,16 +86,19 @@ int proxy(char *proxy_port) {
   socklen_t sin_size;
   int new_fd; // fd for accepted client
   while(1) {    
-    sin_size = sizeof(their_addr);    
-    new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+    // sin_size = sizeof(their_addr); 
+    printf("in the while loop\n");   
+    new_fd = accept(sockfd, (struct sockaddr *)&server, &x);
     
-    if (new_fd == -1) {
+    if (new_fd < 0) {
       perror("accept");
       continue;
     }
+    printf("accept value is: %d", new_fd);
 
     int pid = fork();
     if (pid == 0) { // child process
+      printf("in the child process\n");
       struct ParsedRequest* parsedReq = ParsedRequest_create();
       char buff[MAX_REQ_LEN];
       int val = -91;
@@ -104,9 +112,10 @@ int proxy(char *proxy_port) {
       // run until we recieve a message
       while (total_bytes < MAX_REQ_LEN) { // continuously recieve data from client --- then check for \r\n\r\n
         abc = recv(new_fd, buff+total_bytes, MAX_REQ_LEN - total_bytes, 0);
+        printf("curr buff = %s", buff);
         // printf("recieved from the client %s\n", buff);
         total_bytes += abc;
-        if (strstr(buff, "\r\n")) {
+        if (strstr(buff, "\r\n\r\n")) {
           // printf("found end of message\n");
           break;
           // found end of message
@@ -116,7 +125,7 @@ int proxy(char *proxy_port) {
         //   break;
         // }
       }
-      
+      continue;
       // add ending
       // strcat(buff, "\r\n\r\n"); /// might be better to use memcopy here
       memcpy(buff+abc, "\r\n", 2);
@@ -172,35 +181,28 @@ int proxy(char *proxy_port) {
       hints2.ai_socktype = SOCK_STREAM;
       int sockfd2;
       
-      int rv2;
-      if ((rv2 = getaddrinfo(parsedReq->host, parsedReq->port, &hints2, &servinfo2)) != 0) { //update thissss
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv2));
-        return 1;
-      }
+      // int rv2;
+      // if ((rv2 = getaddrinfo(parsedReq->host, parsedReq->port, &hints2, &servinfo2)) != 0) { //update thissss
+      //   fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv2));
+      //   return 1;
+      // }
       // printf("rv2\n");
       
       // establishing connection to the server
-      for(p2 = servinfo2; p2 != NULL; p2 = p2->ai_next) {
-        if ((sockfd2 = socket(p2->ai_family, p2->ai_socktype,
-          p2->ai_protocol)) == -1) {
-          perror("client: socket");
-          continue;
-        }
-        // printf("socket\n");
-    
-        if (connect(sockfd2, p2->ai_addr, p2->ai_addrlen) == -1) {
+
+      if ((sockfd2 = socket(p2->ai_family, p2->ai_socktype,
+        p2->ai_protocol)) == -1) {
+        perror("client: socket");
+        continue;
+      }
+
+      if (connect(sockfd2, p2->ai_addr, p2->ai_addrlen) == -1) {
           close(sockfd2);
             perror("client: connect");
               continue;
-        }
-    
-        // break;
-    
-        if (p2 == NULL) { // dc this line
-            fprintf(stderr, "client: failed to connect\n");
-            return 2;
-        }
-    } 
+      }
+      
+  
       // printf("connected with the server\n");
       
       char unBuff[MAX_REQ_LEN];
@@ -231,11 +233,12 @@ int proxy(char *proxy_port) {
 
       // close connection to server (not sure if necessary for this assignment)'
       close(sockfd2);
+      close(sockfd2);
       
       // send response to the client
       // int w = send(new_fd, servbuff, recd, 0);   
       // printf("sent to the client :)\n");  
-
+      exit(pid);
     
     }   
 
