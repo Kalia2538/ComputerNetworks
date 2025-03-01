@@ -45,17 +45,19 @@ int proxy(char *proxy_port) {
   }
   printf("sockfd = %d\n", sockfd);
 
+
   
   if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
-    close(sockfd);
+    printf("Bind failed with error: %s\n", strerror(errno));
     perror("server: bind");
-    fflush(stdout);
-  }
+    close(sockfd);
+    return -1;
+}
   printf("made it to bind\n");
 
   // listening for client connections
   int l = -91;
-  if ((l = listen(sockfd, 10) == -1)) { // QUESTION: what should our queue length be?
+  if (((l = listen(sockfd, 10)) == -1)) { // QUESTION: what should our queue length be?
     perror("listen");
     exit(1);
   }
