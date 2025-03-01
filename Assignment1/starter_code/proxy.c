@@ -35,11 +35,14 @@ int proxy(char *proxy_port) {
   server.sin_addr.s_addr = INADDR_ANY;
   server.sin_port = htons(atoi(proxy_port));
   int sockfd;
+
+  
   sockfd = socket(AF_INET, SOCK_STREAM,0);
   // establishing socket connection
   if (sockfd <0) {
       perror("server: socket");
   }
+  printf("sockfd = %d\n", sockfd);
 
   
   if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
@@ -47,6 +50,7 @@ int proxy(char *proxy_port) {
     perror("server: bind");
     fflush(stdout);
   }
+  printf("made it to bind\n");
 
   // listening for client connections
   int l = -91;
@@ -54,6 +58,7 @@ int proxy(char *proxy_port) {
     perror("listen");
     exit(1);
   }
+  printf("after listen\n");
   
 
   socklen_t sin_size;
