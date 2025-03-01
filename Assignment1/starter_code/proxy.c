@@ -27,14 +27,15 @@
 
 
 int proxy(char *proxy_port) {
-  int proc_num = 0;
   struct sockaddr_in server;
+  int sockfd, newfd;
+  int proc_num = 0;
+
   socklen_t x = sizeof(server);
   memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
   server.sin_addr.s_addr = INADDR_ANY;
   server.sin_port = htons(atoi(proxy_port));
-  int sockfd;
 
   
   sockfd = socket(AF_INET, SOCK_STREAM,0);
@@ -65,7 +66,7 @@ int proxy(char *proxy_port) {
   int new_fd; // fd for accepted client
   while(1) {    
     new_fd = accept(sockfd, (struct sockaddr *)&server, &x);
-    
+    printf("this is new_fd: %d\n", new_fd);
     if (new_fd < 0) {
       perror("accept");
       exit(1);
