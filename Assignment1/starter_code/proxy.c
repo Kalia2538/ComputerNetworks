@@ -56,7 +56,7 @@ int proxy(char *proxy_port) {
 
   // listening for client connections
   int listen_val;
-  if (((listen_val = listen(sockfd, 10)) < 0)) { // QUESTION: what should our queue length be?
+  if (((listen_val = listen(sockfd, 10)) < 0)) { /* or == -1*/
     perror("proxy: listen unsuccessful");
     printf("listen failed with error: %s\n", strerror(errno));
     close(sockfd);
