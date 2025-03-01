@@ -31,6 +31,9 @@ int proxy(char *proxy_port) {
   struct sockaddr_in server;
   socklen_t x = sizeof(server);
   memset(&server, 0, sizeof(server));
+  server.sin_family = AF_INET;
+  server.sin_addr.s_addr = INADDR_ANY;
+  server.sin_port = htons(atoi(proxy_port));
   int sockfd;
   sockfd = socket(AF_INET, SOCK_STREAM,0);
   // establishing socket connection
@@ -38,9 +41,7 @@ int proxy(char *proxy_port) {
       perror("server: socket");
   }
 
-  server.sin_family = AF_INET;
-  server.sin_addr.s_addr = INADDR_ANY;
-  server.sin_port = htons(atoi(proxy_port));
+  
   if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
     close(sockfd);
     perror("server: bind");
