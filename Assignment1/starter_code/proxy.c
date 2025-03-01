@@ -62,15 +62,14 @@ int proxy(char *proxy_port) {
   printf("after listen\n");
   
 
-  socklen_t sin_size;
+  // socklen_t sin_size;
   int new_fd; // fd for accepted client
   while(1) {    
-    new_fd = accept(sockfd, (struct sockaddr *)&server, &x);
-    printf("this is new_fd: %d\n", new_fd);
-    if (new_fd < 0) {
-      perror("accept");
+    if((new_fd = accept(sockfd, (struct sockaddr *)&server, &x)) < 0) {
+      perror("accept: ");
       exit(1);
     }
+    printf("this is new_fd: %d\n", new_fd);
     printf("connected to the client\n");
 
     int pid = fork();
