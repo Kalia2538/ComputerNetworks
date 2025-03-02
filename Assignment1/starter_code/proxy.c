@@ -37,7 +37,7 @@ int proxy(char *proxy_port) {
   
   
   int rv1;
-  if ((rv1 = getaddrinfo("127.0.0.1", proxy_port, &hints, &servinfo)) != 0) {
+  if ((rv1 = getaddrinfo(NULL, proxy_port, &hints, &servinfo)) != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv1));
     return 1;
   }
@@ -84,75 +84,54 @@ int proxy(char *proxy_port) {
     new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
     
     if (new_fd == -1) {
-      perror("accept");
-      break;
+      continue;
     }
 
-    // if (fork() == 0)
-    // {
-    //   close(sockfd);
-    //   /* code */
-    // } else {
-    //   close(new_fd);
-    // }
-    
+    if (fork() == 0)
+    {
+      close(sockfd);
+      printf("client connected to proxy\n");
 
-    printf("client connected to proxy\n");
+      struct ParsedRequest* parsedReq = ParsedRequest_create();
+      char buff[MAX_REQ_LEN];
+      int val;
+      int recd;
+      char wholeReq[MAX_REQ_LEN] = ""; // double check this formatting
+      int total_bytes = 0;
 
-    // start the forking process here
-    // for now, we will only do one conection at a time
-
-    struct ParsedRequest* parsedReq = ParsedRequest_create();
-    char buff[MAX_REQ_LEN];
-    int val = -91;
-
-    int abc = -1;
-    char wholeReq[MAX_REQ_LEN] = ""; // double check this formatting
-    int total_bytes = 0;
-
-    int completedMessage = 0;
-
-    // run until we recieve a message
-    while (1) {
-      abc = recv(new_fd, buff, MAX_REQ_LEN, 0);
-      if (abc > 0) {
-        // printf(" this is buff: %s\0\n",buff);
-        break;
+      int completedMessage = 0;
+      int found = 0;
+      // run until we recieve a message
+      while (total_bytes < MAX_REQ_LEN) { // continuously recieve data from client --- then check for \r\n\r\n
+        recd = recv(new_fd, buff+total_bytes, MAX_REQ_LEN - total_bytes, 0);
+        printf("this is buff: %s", buff);
+        total_bytes += recd;
+        if (strstr(buff, "\r\n")) {
+          printf("found ending!\n");
+          break;
+        }
       }
-    }
-    
-    // add ending
-    strcat(buff, "\r\n\r\n"); 
-    val = ParsedRequest_parse(parsedReq, buff, abc+4);
-    // printf("parsed the request\n");
-    // printf("this is the method %s\n",parsedReq->method);
-    // printf("this is the protocol %s\n",parsedReq->protocol);
-    // printf("this is the host %s\n", parsedReq->host);
-    // printf("this is the port_num %s\n", parsedReq->port);
-    // printf("this is the path %s\n",parsedReq->path);
-    // printf("this is the version %s\n",parsedReq->version);
-    // printf("this is the buf %s\n",parsedReq->buf);
-    char *def_port = "80";
-    if (parsedReq->port == NULL) {
-      parsedReq->port = def_port;
-    }
-    
-    // size_t *temp = 0;
-    // int randomc = ParsedRequest_printRequestLine(parsedReq, temp1, MAX_REQ_LEN, temp)
-    if (val == -1) {
-      printf("bad request");
-      // TODO: DO SOME KIND OF ERROR STUFF
-    } else {
-      printf("successfully parsed the message!!!");
-    }
-    
-    // should have a fully parsed request by here
 
-    // printf("got full request");
+      memcpy(buff+recd, "\r\n", 2);
+      val = ParsedRequest_parse(parsedReq, buff, total_bytes + 2);
+      if(ParsedHeader_set(parsedReq, "Connection", "close") != 0) {
+        printf("issue with connection header\n");
+        return -1;
+      }
+      if (ParsedHeader_set(parsedReq, "Host", parsedReq->host) != 0) {
+        printf("issue with host header\n");
+        return -1;
+      }
 
-    // establish connection to the server (i think i get value from the parsedReq variable)
+      printf("parsed the headers\n");
+      
+      char *def_port = "80";
+      if (parsedReq->port == NULL) {
+        parsedReq->port = def_port;
+      }
 
-    struct addrinfo hints2;
+
+      struct addrinfo hints2;
     struct addrinfo *servinfo2, *p2;
     struct sockaddr_storage their_addr2; // connector's address information
 
@@ -191,14 +170,13 @@ int proxy(char *proxy_port) {
     }
     printf("connecting to server succeeded\n");
 
-    int a = send(sockfd2, buff, abc+4, 0); // send request to the server
+    int a = send(sockfd2, buff, total_bytes+4, 0); // send request to the server
     if (a == -1) {
       printf("error with sending request");
     }
     
 
     // wait for response
-    int recd;
     char servbuff[MAX_REQ_LEN] = "";
     while (1) {
       recd = recv(sockfd2, servbuff, MAX_REQ_LEN, 0);
@@ -215,6 +193,80 @@ int proxy(char *proxy_port) {
     
     // send response to the client
     int w = send(new_fd, servbuff, recd, 0);
+
+      /* code */
+    } else {
+      close(new_fd);
+    }
+    // should have a fully parsed request by here
+
+    // printf("got full request");
+
+    // establish connection to the server (i think i get value from the parsedReq variable)
+
+    // struct addrinfo hints2;
+    // struct addrinfo *servinfo2, *p2;
+    // struct sockaddr_storage their_addr2; // connector's address information
+
+    // memset(&hints2, 0, sizeof(hints2));
+    // hints2.ai_family = AF_UNSPEC;
+    // hints2.ai_socktype = SOCK_STREAM;
+    // int sockfd2;
+    
+    // int rv2;
+    // if ((rv2 = getaddrinfo(parsedReq->host, parsedReq->port, &hints2, &servinfo2)) != 0) { //update thissss
+    //   fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv2));
+    //   return 1;
+    // }
+    
+    // // establishing connection to the server
+    // printf("about to enter for loop to establish connection to the server\n");
+    // for(p2 = servinfo2; p2 != NULL; p2 = p2->ai_next) {
+    //   if ((sockfd2 = socket(p2->ai_family, p2->ai_socktype,
+    //     p2->ai_protocol)) == -1) {
+    //     perror("client: socket");
+    //     continue;
+    //   }
+  
+    //   if (connect(sockfd2, p2->ai_addr, p2->ai_addrlen) == -1) {
+    //     close(sockfd2);
+    //       perror("client: connect");
+    //         continue;
+    //   }
+  
+    //   break;
+  
+    //   if (p2 == NULL) { // dc this line
+    //       fprintf(stderr, "client: failed to connect\n");
+    //       return 2;
+    //   }
+    // }
+    // printf("connecting to server succeeded\n");
+
+    // int a = send(sockfd2, buff, abc+4, 0); // send request to the server
+    // if (a == -1) {
+    //   printf("error with sending request");
+    // }
+    
+
+    // // wait for response
+    // int recd;
+    // char servbuff[MAX_REQ_LEN] = "";
+    // while (1) {
+    //   recd = recv(sockfd2, servbuff, MAX_REQ_LEN, 0);
+    //   if (recd > 0) {
+    //     // printf(" this is buff: %s\n",servbuff);
+    //     break;
+    //   }
+    // }
+    // printf("recieved the response from the server!\n");
+
+
+    // // close connection to server (not sure if necessary for this assignment)'
+    // close(sockfd2);
+    
+    // // send response to the client
+    // int w = send(new_fd, servbuff, recd, 0);
 
     
 
