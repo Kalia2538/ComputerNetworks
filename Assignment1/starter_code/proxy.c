@@ -67,6 +67,7 @@ int proxy(char *proxy_port) {
     }
     break;
   }
+  freeaddrinfo(servinfo);
 
   // listening for client connections
   int l = -91;
@@ -84,8 +85,17 @@ int proxy(char *proxy_port) {
     
     if (new_fd == -1) {
       perror("accept");
-      continue;
+      break;
     }
+
+    // if (fork() == 0)
+    // {
+    //   close(sockfd);
+    //   /* code */
+    // } else {
+    //   close(new_fd);
+    // }
+    
 
     printf("client connected to proxy\n");
 
