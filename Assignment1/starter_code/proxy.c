@@ -112,12 +112,12 @@ int proxy(char *proxy_port) {
         send(new_fd, message, strlen(message), 0);
       }
       if(ParsedHeader_set(parsedReq, "Connection", "close") != 0) {
-        char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
+        char message[] = "HTTP/1.0 500 Server Error\r\n\r\n";
         send(new_fd, message, strlen(message), 0);
         return -1;
       }
       if (ParsedHeader_set(parsedReq, "Host", parsedReq->host) != 0) {
-        char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
+        char message[] = "HTTP/1.0 500 Server Error\r\n\r\n";
         send(new_fd, message, strlen(message), 0);
         return -1;
       }
