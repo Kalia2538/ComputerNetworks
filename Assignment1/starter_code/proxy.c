@@ -91,18 +91,14 @@ int proxy(char *proxy_port) {
     {
       struct ParsedRequest* parsedReq = ParsedRequest_create();
       char buff[MAX_REQ_LEN];
-      int val = -91;
+      int val;
 
-      int abc = -1;
-      char wholeReq[MAX_REQ_LEN] = ""; // double check this formatting
-      int total_bytes = 0;
-
-      int completedMessage = 0;
+      int recd;
 
       // run until we recieve a message
       while (1) {
-        abc = recv(new_fd, buff, MAX_REQ_LEN, 0);
-        if (abc > 0) {
+        recd = recv(new_fd, buff, MAX_REQ_LEN, 0);
+        if (recd > 0) {
           // printf(" this is buff: %s\0\n",buff);
           break;
         }
@@ -110,7 +106,21 @@ int proxy(char *proxy_port) {
       
       // add ending
       strcat(buff, "\r\n\r\n"); 
-      val = ParsedRequest_parse(parsedReq, buff, abc+4);
+      val = ParsedRequest_parse(parsedReq, buff, recd+4);
+      if (val < 0) {
+        char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
+        send(new_fd, message, strlen(message), 0);
+      }
+      if(ParsedHeader_set(parsedReq, "Connection", "close") != 0) {
+        char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
+        send(new_fd, message, strlen(message), 0);
+        return -1;
+      }
+      if (ParsedHeader_set(parsedReq, "Host", parsedReq->host) != 0) {
+        char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
+        send(new_fd, message, strlen(message), 0);
+        return -1;
+      }
       // printf("parsed the request\n");
       // printf("this is the method %s\n",parsedReq->method);
       // printf("this is the protocol %s\n",parsedReq->protocol);
@@ -126,12 +136,8 @@ int proxy(char *proxy_port) {
       
       // size_t *temp = 0;
       // int randomc = ParsedRequest_printRequestLine(parsedReq, temp1, MAX_REQ_LEN, temp)
-      if (val == -1) {
-        printf("bad request");
-        // TODO: DO SOME KIND OF ERROR STUFF
-      } else {
-        printf("successfully parsed the message!!!");
-      }
+      printf("successfully parsed the message!!!");
+  
       
       // should have a fully parsed request by here
 
@@ -141,7 +147,6 @@ int proxy(char *proxy_port) {
 
       struct addrinfo hints2;
       struct addrinfo *servinfo2, *p2;
-      struct sockaddr_storage their_addr2; // connector's address information
 
       memset(&hints2, 0, sizeof(hints2));
       hints2.ai_family = AF_UNSPEC;
@@ -178,14 +183,16 @@ int proxy(char *proxy_port) {
       }
       printf("connecting to server succeeded\n");
 
-      int a = send(sockfd2, buff, abc+4, 0); // send request to the server
+      int a = send(sockfd2, buff, recd+4, 0); // send request to the server
       if (a == -1) {
         printf("error with sending request");
+        char message[] = "HTTP/1.0 500 server error\r\n\r\n";
+        send(new_fd, message, strlen(message), 0);
       }
       
 
       // wait for response
-      int recd;
+      recd = 0;
       char servbuff[MAX_REQ_LEN] = "";
       while (1) {
         recd = recv(sockfd2, servbuff, MAX_REQ_LEN, 0);
@@ -201,7 +208,7 @@ int proxy(char *proxy_port) {
       close(sockfd2);
       
       // send response to the client
-      int w = send(new_fd, servbuff, recd, 0);
+      send(new_fd, servbuff, recd, 0);
     }
   }
   return 0;
