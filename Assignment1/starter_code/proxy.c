@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <netinet/tcp.h>
 
-/* TODO: proxy()
+/* TODO: proxy() //
  * Establish a socket connection to listen for incoming connections.
  * Accept each client request in a new process.
  * Parse header of request and get requested URL.
