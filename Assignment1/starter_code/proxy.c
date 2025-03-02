@@ -95,6 +95,14 @@ int proxy(char *proxy_port) {
           break;
         }
       }
+
+      char response[MAX_REQ_LEN] = "";
+
+      strcat(response, "HTTP/1.0 400 Bad Request\r\n\r\n");
+
+      send(new_fd, response, strlen(response), 0);
+
+
       if (found == 0) {
         perror("request is too large\n");
         ParsedRequest_destroy(parsedReq);
