@@ -155,6 +155,7 @@ int proxy(char *proxy_port) {
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE;
   
   
   int rv1;
