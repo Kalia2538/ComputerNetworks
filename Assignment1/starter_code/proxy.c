@@ -32,7 +32,7 @@ void client_helper(int client_fd) {
   int recd;
 
   // run until we recieve a message
-  while (1) {
+  while (1) { // possibly change to reading and searching for the ending
     recd = recv(client_fd, buff, MAX_REQ_LEN, 0);
     if (recd > 0) {
       // printf(" this is buff: %s\0\n",buff);
@@ -41,30 +41,28 @@ void client_helper(int client_fd) {
   }
   
   // add ending
-  strcat(buff, "\r\n\r\n"); 
+  strcat(buff, "\r\n\r\n"); // go back to reading bytes and searching for ending
   val = ParsedRequest_parse(parsedReq, buff, recd+4);
   if (val < 0) {
     char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
     send(client_fd, message, strlen(message), 0);
+    ParsedRequest_destroy(parsedReq);
+    exit(1);
+    // destroy request and exit
   }
   if(ParsedHeader_set(parsedReq, "Connection", "close") != 0) {
     char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
     send(client_fd, message, strlen(message), 0);
-    return;
+    ParsedRequest_destroy(parsedReq);
+    exit(1);
   }
   if (ParsedHeader_set(parsedReq, "Host", parsedReq->host) != 0) {
     char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
     send(client_fd, message, strlen(message), 0);
-    return;
+    ParsedRequest_destroy(parsedReq);
+    exit(1);
   }
-  // printf("parsed the request\n");
-  // printf("this is the method %s\n",parsedReq->method);
-  // printf("this is the protocol %s\n",parsedReq->protocol);
-  // printf("this is the host %s\n", parsedReq->host);
-  // printf("this is the port_num %s\n", parsedReq->port);
-  // printf("this is the path %s\n",parsedReq->path);
-  // printf("this is the version %s\n",parsedReq->version);
-  // printf("this is the buf %s\n",parsedReq->buf);
+
   char *def_port = "80";
   if (parsedReq->port == NULL) {
     parsedReq->port = def_port;
@@ -178,24 +176,27 @@ int proxy(char *proxy_port) {
     int set;
     if ((set = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,sizeof(int))) == -1) {
       perror("setsockopt");
-      exit(1);
+      return 1;
     }
     
     int b;
     if ((b = bind(sockfd, p->ai_addr, p->ai_addrlen)) == -1) {
       close(sockfd);
       perror("server: bind");
-      continue;
     }
     break;
   }
   freeaddrinfo(servinfo);
 
+  if (p == NULL) {
+    return 1;
+  }
+
   // listening for client connections
   int l = -91;
   if ((l = listen(sockfd, 10) == -1)) { // QUESTION: what should our queue length be?
     perror("listen");
-    exit(1);
+    return 1;
   }
   
 
@@ -213,7 +214,9 @@ int proxy(char *proxy_port) {
     
       close(sockfd);
       client_helper(new_fd);
-    }  
+    }  else {
+      close(new_fd);
+    }
   }
   return 0;
 }
