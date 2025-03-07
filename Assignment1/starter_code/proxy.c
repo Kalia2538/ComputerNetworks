@@ -214,6 +214,7 @@ int proxy(char *proxy_port) {
     
       close(sockfd);
       client_helper(new_fd);
+      exit(1);
     }  else {
       close(new_fd);
     }
