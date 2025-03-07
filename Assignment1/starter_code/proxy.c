@@ -31,18 +31,35 @@ void client_helper(int client_fd) {
 
   int recd;
 
+  int total_bytes = 0;
+  
+  char * index;
   // run until we recieve a message
-  while (1) { // possibly change to reading and searching for the ending
-    recd = recv(client_fd, buff, MAX_REQ_LEN, 0);
-    if (recd > 0) {
-      // printf(" this is buff: %s\0\n",buff);
+  while (total_bytes < MAX_REQ_LEN) { // continuously recieve data from client --- then check for \r\n\r\n
+    recd = recv(client_fd, buff+total_bytes, MAX_REQ_LEN - total_bytes, 0);
+    printf("recieved from the client %s\n", buff);
+    total_bytes += recd;
+    if (index = strstr(buff, "\r\n\r\n")) {
+      printf("found end of message: %s\n", index);
       break;
+      // found end of message
     }
+    printf("outside of strstr: %s", index);
   }
+
+  // check that we have a get request !!!!
+  if(strstr(buff, "GET") != 0) {
+    char message[] = "HTTP/1.0 501 Server Error\r\n\r\n";
+    send(client_fd, message, strlen(message), 0);
+    exit(1);
+  }
+
+
+
   
   // add ending
-  strcat(buff, "\r\n\r\n"); // go back to reading bytes and searching for ending
-  val = ParsedRequest_parse(parsedReq, buff, recd+4);
+  // strcat(buff, "\r\n\r\n"); // go back to reading bytes and searching for ending
+  val = ParsedRequest_parse(parsedReq, buff, recd);
   if (val < 0) {
     char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
     send(client_fd, message, strlen(message), 0);
@@ -50,6 +67,7 @@ void client_helper(int client_fd) {
     exit(1);
     // destroy request and exit
   }
+  
   if(ParsedHeader_set(parsedReq, "Connection", "close") != 0) {
     char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
     send(client_fd, message, strlen(message), 0);
@@ -116,7 +134,7 @@ void client_helper(int client_fd) {
   }
   printf("connecting to server succeeded\n");
 
-  int a = send(sockfd2, buff, recd+4, 0); // send request to the server
+  int a = send(sockfd2, buff, recd, 0); // send request to the server
   if (a == -1) {
     printf("error with sending request");
     char message[] = "HTTP/1.0 500 server error\r\n\r\n";
@@ -127,22 +145,14 @@ void client_helper(int client_fd) {
   // wait for response
   recd = 0;
   char servbuff[MAX_REQ_LEN] = "";
-  while (1) {
-    recd = recv(sockfd2, servbuff, MAX_REQ_LEN, 0);
-    if (recd > 0) {
-      // printf(" this is buff: %s\n",servbuff);
-      break;
-    }
+  while ((recd = recv(sockfd2, servbuff, MAX_REQ_LEN, 0)) > 0) {
+    send(client_fd, servbuff,  recd, 0);
   }
-
   printf("recieved the response from the server!\n");
 
 
   // close connection to server (not sure if necessary for this assignment)'
   close(sockfd2);
-    
-  // send response to the client
-  send(client_fd, servbuff, recd, 0);
 }
 
 int proxy(char *proxy_port) {
