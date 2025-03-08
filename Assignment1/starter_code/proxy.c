@@ -39,17 +39,19 @@ void client_helper(int client_fd) {
     recd = recv(client_fd, buff+total_bytes, MAX_REQ_LEN - total_bytes, 0);
     printf("recieved from the client %s\n", buff);
     total_bytes += recd;
-    if ((index = strstr(buff, "\r\n"))) {
+    buff[total_bytes] = '\0';
+    index = strstr(buff, "\r\n");
+    if ((index != NULL)) {
       printf("found end of message:\n");
-      strcat(buff, "\r\n");
       break;
       // found end of message
     }
     printf("outside of strstr:");
   }
+  strcat(buff, "\r\n");
 
   // check that we have a get request !!!!
-  if(strstr(buff, "GET") != 0) {
+  if(strstr(buff, "GET") == NULL) {
     char message[] = "HTTP/1.0 501 Server Error\r\n\r\n";
     send(client_fd, message, strlen(message), 0);
     exit(1);
@@ -60,8 +62,8 @@ void client_helper(int client_fd) {
   
   // add ending
   // strcat(buff, "\r\n\r\n"); // go back to reading bytes and searching for ending
-  val = ParsedRequest_parse(parsedReq, buff, recd);
-  if (val < 0) {
+  val = ParsedRequest_parse(parsedReq, buff, recd + 2);
+  if (val != 0) {
     char message[] = "HTTP/1.0 400 Bad Request\r\n\r\n";
     send(client_fd, message, strlen(message), 0);
     ParsedRequest_destroy(parsedReq);
