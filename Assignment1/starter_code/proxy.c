@@ -26,7 +26,7 @@
 
 void client_helper(int client_fd) {
   struct ParsedRequest* parsedReq = ParsedRequest_create();
-  char buff[MAX_REQ_LEN];
+  char buff[MAX_REQ_LEN] = "";
   int val;
 
   int recd;
@@ -39,12 +39,13 @@ void client_helper(int client_fd) {
     recd = recv(client_fd, buff+total_bytes, MAX_REQ_LEN - total_bytes, 0);
     printf("recieved from the client %s\n", buff);
     total_bytes += recd;
-    if (index = strstr(buff, "\r\n\r\n")) {
-      printf("found end of message: %s\n", index);
+    if ((index = strstr(buff, "\r\n"))) {
+      printf("found end of message:\n");
+      strcat(buff, "\r\n");
       break;
       // found end of message
     }
-    printf("outside of strstr: %s", index);
+    printf("outside of strstr:");
   }
 
   // check that we have a get request !!!!
