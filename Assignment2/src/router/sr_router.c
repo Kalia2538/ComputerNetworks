@@ -79,12 +79,54 @@ void sr_handlepacket(struct sr_instance* sr,
   printf("*** -> Received packet of length %d \n",len);
 
   /* fill in code here */
+  
+  // function passes in a packet
+  // casting to packet struct
+  struct sr_packet *sr_pack = (struct sr_packet *) packet;
+  int result = packet_type(packet);
+  assert(result != 0); // ensures the packet is ip or arp
+  struct sr_ethernet_hdr *eth_hdr = (struct sr_ethernet_hdr *) packet;
+
+  switch (result) {
+    case 1: // arp
+      // do stuff
+      break;
+    case 9: // ip
+      // do stuff
+      break;
+  }
+  // need to determine if this is an ip or arp packet
+  
 
 } /* end sr_handlepacket */
 
 
+/*  determines if the given packet is arp/ip/other
+  if returns
+    0: not arp or ip
+    1: arp (I picked 1 since 'a' is the first letter of the alphabet)
+    9: ip (I picked 9 since 'i' is the 9th letter of the alphabet)
+*/
+int packet_type(uint8_t packet) {
+  struct  sr_ethernet_hdr *hdr = (struct sr_ethernet_hdr *) packet;
+  if (hdr->ether_type == ethertype_arp) { // arp packet
+    return 1;
+  } else if (hdr->ether_type == ethertype_ip) { // ip packet
+    return 9;
+  } else {
+    return 0; // none of the above
+  }
+}
+
+
+
 /* Add any additional helper methods here & don't forget to also declare
 them in sr_router.h.
+
+
+
+
+
 
 If you use any of these methods in sr_arpcache.c, you must also forward declare
 them in sr_arpcache.h to avoid circular dependencies. Since sr_router

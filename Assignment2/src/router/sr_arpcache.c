@@ -18,10 +18,46 @@
 */
 void sr_arpcache_sweepreqs(struct sr_instance *sr) {
     /* fill in code here */
+    struct sr_arpreq *curr = sr->cache.requests;
+    while (curr != NULL) {
+        handle_arpreq(sr, curr);
+        if (curr->times_sent >= 5) {
+            sr_arpreq_destroy(&sr->cache, curr);
+        }
+        curr = curr->next;
+    }
 }
 
 void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
     /* fill in code here */
+    // gets the current time
+    time_t now;
+    time(&now);
+    // check if it has been more than a second since this request was last sent
+    if (difftime(now, request->sent) > 1.0) {
+        // check # of times req was sent b4
+        if (request->times_sent >= 5) {
+            // we've sent this request the max # of times -> need to send ICMP messages
+            /* TODO: find all packets waiting on this request and then send the ICMP message to the 
+                src address in each of those packets*/
+            struct sr_packet* curr = request->packets;
+            while (curr != NULL) {
+                // TODO: send an ICMP message
+                curr = curr->next;
+            }
+
+
+        } else {
+            if (request->sent == 0) {
+                request->sent = now;
+                request->times_sent = 1;
+            } else {
+                request->sent = now;
+                request->times_sent++;
+            }
+            // TODO: send the request
+        }
+    }
 }
 
 /* You should not need to touch the rest of this code. */
