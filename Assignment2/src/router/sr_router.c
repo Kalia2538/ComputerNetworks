@@ -94,7 +94,7 @@ void sr_handlepacket(struct sr_instance* sr,
     // ex: do i need to check the src and dest addrs?
 
   switch (result) {
-    case 1: // arp
+    case 1: { // arp
       sr_arp_hdr_t *arphdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       printf("given arp hdr");
       // TODO: make sure the arp is well formatted
@@ -106,7 +106,7 @@ void sr_handlepacket(struct sr_instance* sr,
           // allocate space for the newly created reply
           uint8_t * reply = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
           // TODO: add error checking for the malloc call
-
+    
           // instantiate ethernet header
           sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *)(packet);
           memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
@@ -182,7 +182,8 @@ void sr_handlepacket(struct sr_instance* sr,
         // not a properly formatted arp header
         return;
       }
-    case 9: // ip
+    }
+    case 9: { // ip
       
       sr_ip_hdr_t *iphdr = (sr_ip_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       // TODO: Verify length
@@ -537,6 +538,7 @@ void sr_handlepacket(struct sr_instance* sr,
       }
 
       break;
+    }
   }
   // need to determine if this is an ip or arp packet
   
