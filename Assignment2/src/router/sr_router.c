@@ -139,7 +139,7 @@ void sr_handlepacket(struct sr_instance* sr,
           print_hdrs(reply, length);
           // send the packet
           int check = sr_send_packet(sr, reply, length, target->name);
-          printf("if 0, sending was successfull (allegedly): %d\n");
+          printf("if 0, sending was successfull (allegedly): %d\n", check);
           // free the reply
           free(reply);
           break;
