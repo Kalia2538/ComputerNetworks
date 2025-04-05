@@ -22,6 +22,8 @@
 #include "sr_arpcache.h"
 #include "sr_utils.h"
 
+#include "sr_dumper.h"
+
 /*---------------------------------------------------------------------
  * Method: sr_init(void)
  * Scope:  Global
@@ -47,6 +49,7 @@ void sr_init(struct sr_instance* sr)
     pthread_create(&thread, &(sr->attr), sr_arpcache_timeout, sr);
 
     /* Add initialization code here! */
+    sr->logfile = sr_dump_open("log.pcap", 0, 65535);
 
 } /* -- sr_init -- */
 
@@ -77,6 +80,15 @@ void sr_handlepacket(struct sr_instance* sr,
   assert(interface);
 
   printf("*** -> Received packet of length %d \n",len);
+
+  if (sr->logfile) {
+    struct pcap_pkthdr log_hdr;
+    gettimeofday(&log_hdr.ts, NULL);
+    log_hdr.caplen = len;
+    log_hdr.len = len;
+
+    sr_dump(sr->logfile, &log_hdr, packet); // 🔥 This logs the packet
+} 
 
   /* fill in code here */
   
