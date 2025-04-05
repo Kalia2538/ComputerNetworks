@@ -85,7 +85,6 @@ void sr_handlepacket(struct sr_instance* sr,
   // casting to packet struct
   // struct sr_packet *sr_pack = (struct sr_packet *) packet;
   int result = packet_type(packet);
-  printf("this is the result %d", result);
   // assert(result != 0); // ensures the packet is ip or arp
   printf("recieved packet");
   print_hdrs(packet, len);
@@ -96,11 +95,11 @@ void sr_handlepacket(struct sr_instance* sr,
   // TODO: Do i need to check if the ethernet header is properly formatted?
     // ex: do i need to check the src and dest addrs?
 
-  switch (result) {
-    case 1: { // arp
+  switch (ethertype(packet)) {
+    case ethertype_arp: { // arp
       sr_arp_hdr_t *arphdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
-      printf("given arp hdr");
       // TODO: make sure the arp is well formatted
+      printf("the arp op %u\n", arphdr->ar_op);
       if (arphdr->ar_op  == arp_op_request) {
         // check if target ip in our router      
         struct sr_if *target = get_interface_from_ip(sr, arphdr->ar_tip);
@@ -186,7 +185,7 @@ void sr_handlepacket(struct sr_instance* sr,
         return;
       }
     }
-    case 9: { // ip
+    case ethertype_ip: { // ip
       
       sr_ip_hdr_t *iphdr = (sr_ip_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       // TODO: Verify length
@@ -549,24 +548,24 @@ void sr_handlepacket(struct sr_instance* sr,
 } /* end sr_handlepacket */
 
 
-/*  determines if the given packet is arp/ip/other
-  if returns
-    0: not arp or ip
-    1: arp (I picked 1 since 'a' is the first letter of the alphabet)
-    9: ip (I picked 9 since 'i' is the 9th letter of the alphabet)
-*/
-int packet_type(uint8_t * packet) {
-  sr_ethernet_hdr_t * hdr = (sr_ethernet_hdr_t *) packet;
-  printf("in packet_type() ... heres the header\n");
-  uint16_t ethertype_val = ethertype(hdr);
-  if (ethertype_val == ethertype_arp) { // arp packet
-    return 1;
-  } else if (ethertype_val == ethertype_ip) { // ip packet
-    return 9;
-  } else {
-    return 0; // none of the above
-  }
-}
+// /*  determines if the given packet is arp/ip/other
+//   if returns
+//     0: not arp or ip
+//     1: arp (I picked 1 since 'a' is the first letter of the alphabet)
+//     9: ip (I picked 9 since 'i' is the 9th letter of the alphabet)
+// */
+// int packet_type(uint8_t * packet) {
+//   sr_ethernet_hdr_t * hdr = (sr_ethernet_hdr_t *) packet;
+//   printf("in packet_type() ... heres the header\n");
+//   uint16_t ethertype_val = ethertype(hdr);
+//   if (ethertype_val == ethertype_arp) { // arp packet
+//     return 1;
+//   } else if (ethertype_val == ethertype_ip) { // ip packet
+//     return 9;
+//   } else {
+//     return 0; // none of the above
+//   }
+// }
 
 // uint8_t create_imcp(int type, int code, uint16_t csum, uint8_t data) {
 //   // malloc a 

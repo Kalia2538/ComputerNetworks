@@ -66,7 +66,7 @@ void sr_init(struct sr_instance* );
 void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 
 /* Add additional helper method declarations here! */
-int packet_type(uint8_t * packet);
+// int packet_type(uint8_t * packet);
 struct sr_rt* find_rt_dest(struct sr_instance * sr, uint32_t dest_ip);
 
 /*sr.utils */
