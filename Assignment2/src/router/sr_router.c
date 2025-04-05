@@ -187,8 +187,10 @@ void sr_handlepacket(struct sr_instance* sr,
             // free(in_cache); // TODO: double check if this is needed or not
           } 
         }
+        break;
       } else {
         // not a properly formatted arp header
+        break;
         return;
       }
     }
