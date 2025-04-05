@@ -558,10 +558,10 @@ void sr_handlepacket(struct sr_instance* sr,
 int packet_type(uint8_t * packet) {
   sr_ethernet_hdr_t * hdr = (sr_ethernet_hdr_t *) packet;
   printf("in packet_type() ... heres the header\n");
-  print_hdr_eth(packet);
-  if (hdr->ether_type == ethertype_arp) { // arp packet
+  uint16_t ethertype_val = ethertype(hdr);
+  if (ethertype_val == ethertype_arp) { // arp packet
     return 1;
-  } else if (hdr->ether_type == ethertype_ip) { // ip packet
+  } else if (ethertype_val == ethertype_ip) { // ip packet
     return 9;
   } else {
     return 0; // none of the above
