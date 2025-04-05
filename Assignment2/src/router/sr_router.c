@@ -86,11 +86,11 @@ void sr_handlepacket(struct sr_instance* sr,
   // struct sr_packet *sr_pack = (struct sr_packet *) packet;
   // int result = packet_type(packet);
   // assert(result != 0); // ensures the packet is ip or arp
-  printf("recieved packet");
+  printf("recieved packet\n");
   print_hdrs(packet, len);
   
   sr_ethernet_hdr_t *eth_hdr = (sr_ethernet_hdr_t *) packet;
-  printf("made it past the printing of hdrs");
+  printf("made it past the printing of hdrs\n");
   
   // TODO: Do i need to check if the ethernet header is properly formatted?
     // ex: do i need to check the src and dest addrs?
@@ -104,43 +104,45 @@ void sr_handlepacket(struct sr_instance* sr,
         // check if target ip in our router      
         struct sr_if *target = get_interface_from_ip(sr, arphdr->ar_tip);
           //yes
-        if (target != NULL) {
-          // allocate space for the newly created reply
-          uint8_t * reply = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
-          // TODO: add error checking for the malloc call
-    
-          // instantiate ethernet header
-          sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *)(packet);
-          memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
-          memcpy(new_eth_hdr->ether_shost, target->addr, ETHER_ADDR_LEN);
-          new_eth_hdr->ether_type = htons(ethertype_arp);
+          if (target != NULL) {
+            printf("target is not null !!!\n");
+            // allocate space for the newly created reply
+            uint8_t * reply = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
+            // TODO: add error checking for the malloc call
+      
+            // instantiate ethernet header
+            sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *)(packet);
+            memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
+            memcpy(new_eth_hdr->ether_shost, target->addr, ETHER_ADDR_LEN);
+            new_eth_hdr->ether_type = htons(ethertype_arp);
 
-          // copy over the ethernet header
-          memcpy(reply, new_eth_hdr, sizeof(sr_ethernet_hdr_t)); // TODO: double check the math here
-          
-          // instantiate arp header
-          sr_arp_hdr_t * new_arp_hdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
-          new_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
-          new_arp_hdr->ar_pro = htons(ethertype_arp);
-          new_arp_hdr->ar_hln = arphdr->ar_hln; // assuming this variable should be the same as last time
-          new_arp_hdr->ar_pln = arphdr->ar_pln;
-          new_arp_hdr->ar_op = htons(arp_op_reply);
-          memcpy(new_arp_hdr->ar_sha, target->addr, ETHER_ADDR_LEN);
-          new_arp_hdr->ar_sip = target->ip;
-          memcpy(new_arp_hdr->ar_tha, eth_hdr->ether_shost, ETHER_ADDR_LEN);
-          new_arp_hdr->ar_tip = arphdr->ar_sip;
+            // copy over the ethernet header
+            memcpy(reply, new_eth_hdr, sizeof(sr_ethernet_hdr_t)); // TODO: double check the math here
+            
+            // instantiate arp header
+            sr_arp_hdr_t * new_arp_hdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
+            new_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
+            new_arp_hdr->ar_pro = htons(ethertype_arp);
+            new_arp_hdr->ar_hln = arphdr->ar_hln; // assuming this variable should be the same as last time
+            new_arp_hdr->ar_pln = arphdr->ar_pln;
+            new_arp_hdr->ar_op = htons(arp_op_reply);
+            memcpy(new_arp_hdr->ar_sha, target->addr, ETHER_ADDR_LEN);
+            new_arp_hdr->ar_sip = target->ip;
+            memcpy(new_arp_hdr->ar_tha, eth_hdr->ether_shost, ETHER_ADDR_LEN);
+            new_arp_hdr->ar_tip = arphdr->ar_sip;
 
-          // copy over the new arp header
-          memcpy(reply + sizeof(sr_ethernet_hdr_t), new_arp_hdr, sizeof(sr_arp_hdr_t));
-          unsigned int length = sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t);
-          
-          printf("packet(reply) to be sent \n");
-          print_hdrs(reply, length);
-          // send the packet
-          sr_send_packet(sr, reply, length, target->name);
-          // free the reply
-          free(reply);
-        }
+            // copy over the new arp header
+            memcpy(reply + sizeof(sr_ethernet_hdr_t), new_arp_hdr, sizeof(sr_arp_hdr_t));
+            unsigned int length = sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t);
+            
+            printf("packet(reply) to be sent \n");
+            print_hdrs(reply, length);
+            // send the packet
+            sr_send_packet(sr, reply, length, target->name);
+            // free the reply
+            free(reply);
+          }
+          printf("target == NULL...dropping the packet\n");
         // no
         // "drop it" --> does that mean do nothing???
       } else if (arphdr->ar_op == arp_op_reply) {
