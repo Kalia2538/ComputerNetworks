@@ -138,7 +138,8 @@ void sr_handlepacket(struct sr_instance* sr,
           printf("packet(reply) to be sent \n");
           print_hdrs(reply, length);
           // send the packet
-          sr_send_packet(sr, reply, length, target->name);
+          int check = sr_send_packet(sr, reply, length, target->name);
+          printf("if 0, sending was successfull (allegedly): %d\n");
           // free the reply
           free(reply);
         } else {
@@ -148,10 +149,12 @@ void sr_handlepacket(struct sr_instance* sr,
         // no
         // "drop it" --> does that mean do nothing???
       } else if (ntohs(arphdr->ar_op) == arp_op_reply) {
+        printf("now we have a reply(allegedly) %u\n", ntohs(arphdr->ar_op));
         // do reply stuff
         // check if ip target is one of our ip addresses
         struct sr_if *target = get_interface_from_ip(sr, arphdr->ar_tip);
         if (target != NULL) {
+          printf("reply target is not null !!!\n");
           // cache the reply
           // check if in the cache already has the reply entry
           struct sr_arpreq * in_cache = sr_arpcache_insert(&sr->cache, arphdr->ar_tha, target->ip);
