@@ -142,9 +142,12 @@ void sr_handlepacket(struct sr_instance* sr,
           printf("if 0, sending was successfull (allegedly): %d\n");
           // free the reply
           free(reply);
+          break;
         } else {
           printf("target == NULL...dropping the packet\n");
+          break;
         }
+        break;
         
         // no
         // "drop it" --> does that mean do nothing???
