@@ -188,10 +188,6 @@ void sr_handlepacket(struct sr_instance* sr,
           } 
         }
         break;
-      } else {
-        // not a properly formatted arp header
-        break;
-        return;
       }
     }
     case ethertype_ip: { // ip
@@ -548,8 +544,8 @@ void sr_handlepacket(struct sr_instance* sr,
               // add packet to queue (look for ip in cache.requests)
       }
 
-      break;
     }
+    break;
   }
   // need to determine if this is an ip or arp packet
   
