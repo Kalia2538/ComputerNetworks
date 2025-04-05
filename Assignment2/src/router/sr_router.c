@@ -22,7 +22,6 @@
 #include "sr_arpcache.h"
 #include "sr_utils.h"
 
-#include "sr_dumper.h"
 
 /*---------------------------------------------------------------------
  * Method: sr_init(void)
@@ -49,7 +48,6 @@ void sr_init(struct sr_instance* sr)
     pthread_create(&thread, &(sr->attr), sr_arpcache_timeout, sr);
 
     /* Add initialization code here! */
-    sr->logfile = sr_dump_open("log.pcap", 0, 65535);
 
 } /* -- sr_init -- */
 
@@ -80,15 +78,6 @@ void sr_handlepacket(struct sr_instance* sr,
   assert(interface);
 
   printf("*** -> Received packet of length %d \n",len);
-
-  if (sr->logfile) {
-    struct pcap_pkthdr log_hdr;
-    gettimeofday(&log_hdr.ts, NULL);
-    log_hdr.caplen = len;
-    log_hdr.len = len;
-
-    sr_dump(sr->logfile, &log_hdr, packet); // 🔥 This logs the packet
-} 
 
   /* fill in code here */
   
@@ -131,7 +120,7 @@ void sr_handlepacket(struct sr_instance* sr,
           // instantiate arp header
           sr_arp_hdr_t * new_arp_hdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
           new_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
-          new_arp_hdr->ar_pro = htons(ethertype_ip);
+          new_arp_hdr->ar_pro = htons(ethertype_arp);
           new_arp_hdr->ar_hln = arphdr->ar_hln; // assuming this variable should be the same as last time
           new_arp_hdr->ar_pln = arphdr->ar_pln;
           new_arp_hdr->ar_op = htons(arp_op_reply);
