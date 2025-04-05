@@ -73,7 +73,6 @@ void sr_handlepacket(struct sr_instance* sr,
 {
   /* REQUIRES */
   assert(sr);
-  printf("%hhx\n",packet);
   assert(packet);
   assert(interface);
 
@@ -85,7 +84,7 @@ void sr_handlepacket(struct sr_instance* sr,
   // casting to packet struct
   // struct sr_packet *sr_pack = (struct sr_packet *) packet;
   int result = packet_type(packet);
-  assert(result != 0); // ensures the packet is ip or arp
+  // assert(result != 0); // ensures the packet is ip or arp
   printf("recieved packet");
   print_hdrs(packet, len);
   
