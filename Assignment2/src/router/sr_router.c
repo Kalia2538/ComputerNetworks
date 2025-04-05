@@ -91,7 +91,6 @@ void sr_handlepacket(struct sr_instance* sr,
   print_hdrs(packet, len);
   
   sr_ethernet_hdr_t *eth_hdr = (sr_ethernet_hdr_t *) packet;
-  print_hdr_eth
   printf("made it past the printing of hdrs");
   
   // TODO: Do i need to check if the ethernet header is properly formatted?
