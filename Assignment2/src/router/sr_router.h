@@ -69,6 +69,18 @@ void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 int packet_type(uint8_t * packet);
 struct sr_rt* find_rt_dest(struct sr_instance * sr, uint32_t dest_ip);
 
+/*sr.utils */
+void print_hdrs(uint8_t *buf, uint32_t length); // debugging
+uint16_t cksum(const void *_data, int len);
+
+/*sr.arpcache*/ 
+int   sr_arpcache_init(struct sr_arpcache *cache);
+void *sr_arpcache_timeout(void *cache_ptr);
+struct sr_arpreq *sr_arpcache_insert(struct sr_arpcache *cache, unsigned char *mac, uint32_t ip);
+void sr_arpreq_destroy(struct sr_arpcache *cache, struct sr_arpreq *entry);
+struct sr_arpentry *sr_arpcache_lookup(struct sr_arpcache *cache, uint32_t ip);
+
+
 /* -- sr_if.c -- */
 struct sr_if *sr_get_interface(struct sr_instance*, const char* );
 struct sr_if *get_interface_from_ip(struct sr_instance*, uint32_t );

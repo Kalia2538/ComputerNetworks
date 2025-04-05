@@ -620,106 +620,106 @@ If you use any of these methods in sr_arpcache.c, you must also forward declare
 them in sr_arpcache.h to avoid circular dependencies. Since sr_router
 already imports sr_arpcache.h, sr_arpcache cannot import sr_router.h -KM */
 
-void print_eth_hdr(sr_ethernet_hdr_t * hdr) {
-  printf("Destination MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-    hdr->ether_dhost[0], hdr->ether_dhost[1], hdr->ether_dhost[2],
-    hdr->ether_dhost[3], hdr->ether_dhost[4], hdr->ether_dhost[5]);
-}
+// void print_eth_hdr(sr_ethernet_hdr_t * hdr) {
+//   printf("Destination MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+//     hdr->ether_dhost[0], hdr->ether_dhost[1], hdr->ether_dhost[2],
+//     hdr->ether_dhost[3], hdr->ether_dhost[4], hdr->ether_dhost[5]);
+// }
 
-void print_arp_hdr(const struct sr_arp_hdr * hdr) {
-  printf("=== ARP Header ===\n");
+// void print_arp_hdr(const struct sr_arp_hdr * hdr) {
+//   printf("=== ARP Header ===\n");
 
-  printf("Hardware Type: %u\n", ntohs(hdr->ar_hrd));
-  printf("Protocol Type: 0x%04x\n", ntohs(hdr->ar_pro));
-  printf("Hardware Addr Len: %u\n", hdr->ar_hln);
-  printf("Protocol Addr Len: %u\n", hdr->ar_pln);
+//   printf("Hardware Type: %u\n", ntohs(hdr->ar_hrd));
+//   printf("Protocol Type: 0x%04x\n", ntohs(hdr->ar_pro));
+//   printf("Hardware Addr Len: %u\n", hdr->ar_hln);
+//   printf("Protocol Addr Len: %u\n", hdr->ar_pln);
 
-  unsigned short opcode = ntohs(hdr->ar_op);
-  printf("Opcode: %u (%s)\n", opcode,
-         opcode == 1 ? "Request" :
-         opcode == 2 ? "Reply" : "Unknown");
+//   unsigned short opcode = ntohs(hdr->ar_op);
+//   printf("Opcode: %u (%s)\n", opcode,
+//          opcode == 1 ? "Request" :
+//          opcode == 2 ? "Reply" : "Unknown");
 
-  // Sender MAC
-  printf("Sender MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-         hdr->ar_sha[0], hdr->ar_sha[1], hdr->ar_sha[2],
-         hdr->ar_sha[3], hdr->ar_sha[4], hdr->ar_sha[5]);
+//   // Sender MAC
+//   printf("Sender MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+//          hdr->ar_sha[0], hdr->ar_sha[1], hdr->ar_sha[2],
+//          hdr->ar_sha[3], hdr->ar_sha[4], hdr->ar_sha[5]);
 
-  // Sender IP
-  struct in_addr sender_ip;
-  sender_ip.s_addr = hdr->ar_sip;
-  printf("Sender IP: %s\n", inet_ntoa(sender_ip));
+//   // Sender IP
+//   struct in_addr sender_ip;
+//   sender_ip.s_addr = hdr->ar_sip;
+//   printf("Sender IP: %s\n", inet_ntoa(sender_ip));
 
-  // Target MAC
-  printf("Target MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-         hdr->ar_tha[0], hdr->ar_tha[1], hdr->ar_tha[2],
-         hdr->ar_tha[3], hdr->ar_tha[4], hdr->ar_tha[5]);
+//   // Target MAC
+//   printf("Target MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+//          hdr->ar_tha[0], hdr->ar_tha[1], hdr->ar_tha[2],
+//          hdr->ar_tha[3], hdr->ar_tha[4], hdr->ar_tha[5]);
 
-  // Target IP
-  struct in_addr target_ip;
-  target_ip.s_addr = hdr->ar_tip;
-  printf("Target IP: %s\n", inet_ntoa(target_ip));
-}
+//   // Target IP
+//   struct in_addr target_ip;
+//   target_ip.s_addr = hdr->ar_tip;
+//   printf("Target IP: %s\n", inet_ntoa(target_ip));
+// }
 
-void print_ip_header(const struct sr_ip_hdr * ip) {
-  printf("=== IP Header ===\n");
+// void print_ip_header(const struct sr_ip_hdr * ip) {
+//   printf("=== IP Header ===\n");
 
-  unsigned int version = ip->ip_v;
-  unsigned int header_length = ip->ip_hl * 4;  // ip_hl is in 32-bit words
+//   unsigned int version = ip->ip_v;
+//   unsigned int header_length = ip->ip_hl * 4;  // ip_hl is in 32-bit words
 
-  printf("Version: %u\n", version);
-  printf("Header Length: %u bytes\n", header_length);
-  printf("Type of Service: 0x%02x\n", ip->ip_tos);
-  printf("Total Length: %u\n", ntohs(ip->ip_len));
-  printf("Identification: 0x%04x\n", ntohs(ip->ip_id));
+//   printf("Version: %u\n", version);
+//   printf("Header Length: %u bytes\n", header_length);
+//   printf("Type of Service: 0x%02x\n", ip->ip_tos);
+//   printf("Total Length: %u\n", ntohs(ip->ip_len));
+//   printf("Identification: 0x%04x\n", ntohs(ip->ip_id));
   
-  unsigned short frag_flags = ntohs(ip->ip_off);
-  printf("Fragment Offset: 0x%04x\n", frag_flags);
-  printf("  - RF: %s\n", (frag_flags & IP_RF) ? "Set" : "Not Set");
-  printf("  - DF: %s\n", (frag_flags & IP_DF) ? "Set" : "Not Set");
-  printf("  - MF: %s\n", (frag_flags & IP_MF) ? "Set" : "Not Set");
+//   unsigned short frag_flags = ntohs(ip->ip_off);
+//   printf("Fragment Offset: 0x%04x\n", frag_flags);
+//   printf("  - RF: %s\n", (frag_flags & IP_RF) ? "Set" : "Not Set");
+//   printf("  - DF: %s\n", (frag_flags & IP_DF) ? "Set" : "Not Set");
+//   printf("  - MF: %s\n", (frag_flags & IP_MF) ? "Set" : "Not Set");
 
-  printf("Time to Live (TTL): %u\n", ip->ip_ttl);
+//   printf("Time to Live (TTL): %u\n", ip->ip_ttl);
 
-  unsigned int protocol = ip->ip_p;
-  printf("Protocol: %u (%s)\n", protocol,
-         protocol == 1 ? "ICMP" :
-         protocol == 6 ? "TCP" :
-         protocol == 17 ? "UDP" : "Other");
+//   unsigned int protocol = ip->ip_p;
+//   printf("Protocol: %u (%s)\n", protocol,
+//          protocol == 1 ? "ICMP" :
+//          protocol == 6 ? "TCP" :
+//          protocol == 17 ? "UDP" : "Other");
 
-  printf("Checksum: 0x%04x\n", ntohs(ip->ip_sum));
+//   printf("Checksum: 0x%04x\n", ntohs(ip->ip_sum));
 
-  // Source IP address
-  struct in_addr src_ip;
-  src_ip.s_addr = ip->ip_src;
-  printf("Source IP: %s\n", inet_ntoa(src_ip));
+//   // Source IP address
+//   struct in_addr src_ip;
+//   src_ip.s_addr = ip->ip_src;
+//   printf("Source IP: %s\n", inet_ntoa(src_ip));
 
-  // Destination IP address
-  struct in_addr dst_ip;
-  dst_ip.s_addr = ip->ip_dst;
-  printf("Destination IP: %s\n", inet_ntoa(dst_ip));
-}
+//   // Destination IP address
+//   struct in_addr dst_ip;
+//   dst_ip.s_addr = ip->ip_dst;
+//   printf("Destination IP: %s\n", inet_ntoa(dst_ip));
+// }
 
 
-void print_icmp_hdr(const struct sr_icmp_hdr * icmp_hdr) {
-    printf("=== ICMP Header ===\n");
+// void print_icmp_hdr(const struct sr_icmp_hdr * icmp_hdr) {
+//     printf("=== ICMP Header ===\n");
 
-    // Print ICMP Type and Code
-    printf("Type: %u\n", icmp_hdr->icmp_type);
-    printf("Code: %u\n", icmp_hdr->icmp_code);
+//     // Print ICMP Type and Code
+//     printf("Type: %u\n", icmp_hdr->icmp_type);
+//     printf("Code: %u\n", icmp_hdr->icmp_code);
 
-    // Print Checksum
-    printf("Checksum: 0x%04x\n", ntohs(icmp_hdr->icmp_sum));
+//     // Print Checksum
+//     printf("Checksum: 0x%04x\n", ntohs(icmp_hdr->icmp_sum));
 
-    // Print unused field
-    printf("Unused: 0x%08x\n", ntohl(icmp_hdr->unused));
+//     // Print unused field
+//     printf("Unused: 0x%08x\n", ntohl(icmp_hdr->unused));
 
-    // Print ICMP data (you may want to print it in hex format or ASCII based on your needs)
-    printf("Data: ");
-    for (int i = 0; i < ICMP_DATA_SIZE; i++) {
-        printf("%02x ", icmp_hdr->data[i]);
-    }
-    printf("\n");
-}
+//     // Print ICMP data (you may want to print it in hex format or ASCII based on your needs)
+//     printf("Data: ");
+//     for (int i = 0; i < ICMP_DATA_SIZE; i++) {
+//         printf("%02x ", icmp_hdr->data[i]);
+//     }
+//     printf("\n");
+// }
 
 
 
