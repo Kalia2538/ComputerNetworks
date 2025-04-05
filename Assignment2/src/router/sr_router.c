@@ -122,7 +122,7 @@ void sr_handlepacket(struct sr_instance* sr,
           // instantiate arp header
           sr_arp_hdr_t * new_arp_hdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
           new_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
-          new_arp_hdr->ar_pro = htons(ethertype_arp);
+          new_arp_hdr->ar_pro = htons(ethertype_ip);
           new_arp_hdr->ar_hln = arphdr->ar_hln; // assuming this variable should be the same as last time
           new_arp_hdr->ar_pln = arphdr->ar_pln;
           new_arp_hdr->ar_op = htons(arp_op_reply);
@@ -141,8 +141,10 @@ void sr_handlepacket(struct sr_instance* sr,
           sr_send_packet(sr, reply, length, target->name);
           // free the reply
           free(reply);
+        } else {
+          printf("target == NULL...dropping the packet\n");
         }
-        printf("target == NULL...dropping the packet\n");
+        
         // no
         // "drop it" --> does that mean do nothing???
       } else if (ntohs(arphdr->ar_op) == arp_op_reply) {
