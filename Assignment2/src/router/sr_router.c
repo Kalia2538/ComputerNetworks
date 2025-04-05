@@ -73,6 +73,7 @@ void sr_handlepacket(struct sr_instance* sr,
 {
   /* REQUIRES */
   assert(sr);
+  printf("%hhx\n",packet);
   assert(packet);
   assert(interface);
 
