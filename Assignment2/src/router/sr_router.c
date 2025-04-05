@@ -85,11 +85,13 @@ void sr_handlepacket(struct sr_instance* sr,
   // casting to packet struct
   // struct sr_packet *sr_pack = (struct sr_packet *) packet;
   int result = packet_type(packet);
+  printf("this is the result %d", result);
   // assert(result != 0); // ensures the packet is ip or arp
   printf("recieved packet");
   print_hdrs(packet, len);
   
   sr_ethernet_hdr_t *eth_hdr = (sr_ethernet_hdr_t *) packet;
+  printf("made it past the printing of hdrs");
   
   // TODO: Do i need to check if the ethernet header is properly formatted?
     // ex: do i need to check the src and dest addrs?
