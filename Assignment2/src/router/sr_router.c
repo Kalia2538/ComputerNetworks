@@ -91,6 +91,7 @@ void sr_handlepacket(struct sr_instance* sr,
   print_hdrs(packet, len);
   
   sr_ethernet_hdr_t *eth_hdr = (sr_ethernet_hdr_t *) packet;
+  print_hdr_eth
   printf("made it past the printing of hdrs");
   
   // TODO: Do i need to check if the ethernet header is properly formatted?
@@ -556,7 +557,9 @@ void sr_handlepacket(struct sr_instance* sr,
     9: ip (I picked 9 since 'i' is the 9th letter of the alphabet)
 */
 int packet_type(uint8_t * packet) {
-  sr_ethernet_hdr_t * hdr = (sr_ethernet_hdr_t *) (packet);
+  sr_ethernet_hdr_t * hdr = (sr_ethernet_hdr_t *) packet;
+  printf("in packet_type() ... heres the header\n");
+  print_hdr_eth(packet);
   if (hdr->ether_type == ethertype_arp) { // arp packet
     return 1;
   } else if (hdr->ether_type == ethertype_ip) { // ip packet
