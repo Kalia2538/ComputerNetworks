@@ -111,34 +111,34 @@ void sr_handlepacket(struct sr_instance* sr,
           // TODO: add error checking for the malloc call
     
           // instantiate ethernet header
-          sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *)(packet);
+          sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *)(reply);
           memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
           memcpy(new_eth_hdr->ether_shost, target->addr, ETHER_ADDR_LEN);
           new_eth_hdr->ether_type = htons(ethertype_arp);
 
-          // copy over the ethernet header
-          memcpy(reply, new_eth_hdr, sizeof(sr_ethernet_hdr_t)); // TODO: double check the math here
+          // copy over the ethernet header  
+          // memcpy(reply, new_eth_hdr, sizeof(sr_ethernet_hdr_t)); // TODO: double check the math here
           
           // instantiate arp header
-          sr_arp_hdr_t * new_arp_hdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
+          sr_arp_hdr_t * new_arp_hdr = (sr_arp_hdr_t*)(reply + sizeof(sr_ethernet_hdr_t));
           new_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
           new_arp_hdr->ar_pro = htons(ethertype_ip);
           new_arp_hdr->ar_hln = arphdr->ar_hln; // assuming this variable should be the same as last time
           new_arp_hdr->ar_pln = arphdr->ar_pln;
           new_arp_hdr->ar_op = htons(arp_op_reply);
-          memcpy(new_arp_hdr->ar_sha, target->addr, ETHER_ADDR_LEN);
+          memcpy(new_arp_hdr->ar_sha, eth_hdr->ether_dhost, ETHER_ADDR_LEN);
           new_arp_hdr->ar_sip = target->ip;
           memcpy(new_arp_hdr->ar_tha, eth_hdr->ether_shost, ETHER_ADDR_LEN);
           new_arp_hdr->ar_tip = arphdr->ar_sip;
 
           // copy over the new arp header
-          memcpy(reply + sizeof(sr_ethernet_hdr_t), new_arp_hdr, sizeof(sr_arp_hdr_t));
+          // memcpy(reply + sizeof(sr_ethernet_hdr_t), new_arp_hdr, sizeof(sr_arp_hdr_t));
           unsigned int length = sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t);
           
           printf("packet(reply) to be sent \n");
           print_hdrs(reply, length);
           // send the packet
-          int check = sr_send_packet(sr, reply, length, target->name);
+          int check = sr_send_packet(sr, packet, length, target->name);
           printf("if 0, sending was successfull (allegedly): %d\n", check);
           // free the reply
           free(reply);
