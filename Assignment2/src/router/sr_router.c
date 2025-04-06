@@ -87,7 +87,7 @@ void sr_handlepacket(struct sr_instance* sr,
       sr_arp_hdr_t *arphdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       // TODO: make sure the arp is well formatted
       if (ntohs(arphdr->ar_op)  == arp_op_request) {
-        struct sr_if * our_interface = get_interface_from_ip(sr, arphdr->ar_tip);
+        struct sr_if * our_interface = get_interface_from_ip(sr, ntohl(arphdr->ar_tip));
         if (our_interface != NULL) { // addressed to us
           // allocate space for the newly created reply
           uint8_t * reply = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
@@ -162,7 +162,7 @@ void sr_handlepacket(struct sr_instance* sr,
       uint16_t hdr_sum = iphdr->ip_sum;
       iphdr->ip_sum = 0;
       assert(cksum((uint8_t *)iphdr, iphdr->ip_hl *4) == hdr_sum);
-      struct sr_if *interface = get_interface_from_ip(sr, iphdr->ip_dst);
+      struct sr_if *interface = get_interface_from_ip(sr, ntohl(iphdr->ip_dst));
 
       if (interface != NULL) { // addressed to us
         if (iphdr->ip_p == ip_protocol_icmp) { // it is an ICMP
