@@ -556,7 +556,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
 } /* end sr_handlepacket */
 
-void create_arp_reply(uint8_t * packet, struct sr_if * interface, char * tha, uint32_t tip) {
+void create_arp_reply(uint8_t * packet, struct sr_if * interface, unsigned char * tha, uint32_t tip) {
   sr_ethernet_hdr_t * eth_hdr = (sr_ethernet_hdr_t * ) packet;
   memcpy(eth_hdr->ether_dhost, tha, 6);
   memcpy(eth_hdr->ether_shost, interface->addr, 6);
@@ -568,9 +568,9 @@ void create_arp_reply(uint8_t * packet, struct sr_if * interface, char * tha, ui
   arp_hdr->ar_hln = 0x06;
   arp_hdr->ar_pln = 0x04;
   arp_hdr->ar_op = htons(arp_op_reply);
-  memcpy(arp_hdr->ar_sha, interface->addr, 6);
+  memcpy(arp_hdr->ar_sha, interface->addr, ETHER_ADDR_LEN);
   arp_hdr->ar_sip = interface->ip;
-  memcpy(arp_hdr->ar_tha, tha, 6);
+  memcpy(arp_hdr->ar_tha, tha, ETHER_ADDR_LEN);
   arp_hdr->ar_tip = tip;  
 }
 /*
