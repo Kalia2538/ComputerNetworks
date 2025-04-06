@@ -159,7 +159,9 @@ void sr_handlepacket(struct sr_instance* sr,
       sr_ip_hdr_t *iphdr = (sr_ip_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       // TODO: Verify length
       // verify checksum
-      assert(cksum((uint8_t *)iphdr, sizeof(sr_ip_hdr_t)) == iphdr->ip_sum); // TODO: make sure these are the correct parameters
+      uint16_t hdr_sum = iphdr->ip_sum;
+      iphdr->ip_sum = 0;
+      assert(cksum((uint8_t *)iphdr, iphdr->ip_hl *4) == hdr_sum); // TODO: make sure these are the correct parameters
       struct sr_if *interface = get_interface_from_ip(sr, iphdr->ip_dst);
       if (interface != NULL) { // addressed to us
         if (iphdr->ip_p == ip_protocol_icmp) { // it is an ICMP
