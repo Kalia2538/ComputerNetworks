@@ -163,7 +163,7 @@ void sr_handlepacket(struct sr_instance* sr,
       iphdr->ip_sum = 0;
       assert(cksum((uint8_t *)iphdr, iphdr->ip_hl *4) == hdr_sum);
       iphdr->ip_sum = hdr_sum;
-      struct sr_if *interface = get_interface_from_ip(sr, ntohl(iphdr->ip_dst));
+      struct sr_if *interface = get_interface_from_ip(sr, (iphdr->ip_dst));
 
       if (interface != NULL) { // addressed to us
         if (iphdr->ip_p == ip_protocol_icmp) { // it is an ICMP
