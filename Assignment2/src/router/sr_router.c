@@ -162,6 +162,7 @@ void sr_handlepacket(struct sr_instance* sr,
       uint16_t hdr_sum = iphdr->ip_sum;
       iphdr->ip_sum = 0;
       assert(cksum((uint8_t *)iphdr, iphdr->ip_hl *4) == hdr_sum);
+      iphdr->ip_sum = hdr_sum;
       struct sr_if *interface = get_interface_from_ip(sr, ntohl(iphdr->ip_dst));
 
       if (interface != NULL) { // addressed to us
