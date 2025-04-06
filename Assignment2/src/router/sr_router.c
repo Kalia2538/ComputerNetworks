@@ -562,7 +562,7 @@ void create_arp_reply(uint8_t * packet, struct sr_if * interface, char * tha, ui
   memcpy(eth_hdr->ether_shost, interface->addr, 6);
   eth_hdr->ether_type = ethertype_arp;
   
-  sr_arp_hdr_t * arp_hdr = (sr_arp_hdr_t*) packet;
+  sr_arp_hdr_t * arp_hdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
   arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
   arp_hdr->ar_pro = htons(ethertype_ip);
   arp_hdr->ar_hln = 0x06;
