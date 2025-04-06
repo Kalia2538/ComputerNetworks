@@ -116,7 +116,9 @@ void sr_handlepacket(struct sr_instance* sr,
         printf("now we have a reply(allegedly) %u\n", ntohs(arphdr->ar_op));
         // do reply stuff
         // check if ip target is one of our ip addresses
+        sr_print_if_list(sr);
         struct sr_if *target = get_interface_from_ip(sr, arphdr->ar_tip);
+
         if (target != NULL) {
           printf("reply target is not null !!!\n");
           // cache the reply
