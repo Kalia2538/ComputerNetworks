@@ -165,7 +165,7 @@ void sr_handlepacket(struct sr_instance* sr,
       struct sr_if *interface = get_interface_from_ip(sr, iphdr->ip_dst);
 
       if (interface != NULL) { // addressed to us
-        if (ntohs(iphdr->ip_p) == ip_protocol_icmp) { // it is an ICMP
+        if (iphdr->ip_p == ip_protocol_icmp) { // it is an ICMP
           sr_icmp_hdr_t * icmp_hdr = (sr_icmp_hdr_t *)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_icmp_hdr_t));
           if (icmp_hdr->icmp_type == 8) {
             // malloc size of ethernet header + ip header + icmp header
