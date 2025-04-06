@@ -68,7 +68,7 @@ void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 /* Add additional helper method declarations here! */
 // int packet_type(uint8_t * packet);
 struct sr_rt* find_rt_dest(struct sr_instance * sr, uint32_t dest_ip);
-void create_arp_reply(uint8_t * packet, struct sr_if * interface, char * tha, uint32_t tip);
+void create_arp_reply(uint8_t * packet, struct sr_if * interface, unsigned char * tha, uint32_t tip);
 
 /*sr.utils */
 void print_hdrs(uint8_t *buf, uint32_t length); // debugging
