@@ -161,25 +161,27 @@ void sr_handlepacket(struct sr_instance* sr,
       // verify checksum
       uint16_t hdr_sum = iphdr->ip_sum;
       iphdr->ip_sum = 0;
-      assert(cksum((uint8_t *)iphdr, iphdr->ip_hl *4) == hdr_sum); // TODO: make sure these are the correct parameters
+      assert(cksum((uint8_t *)iphdr, iphdr->ip_hl *4) == hdr_sum);
       struct sr_if *interface = get_interface_from_ip(sr, iphdr->ip_dst);
+
       if (interface != NULL) { // addressed to us
-        if (iphdr->ip_p == ip_protocol_icmp) { // it is an ICMP
-          sr_icmp_hdr_t * icmp_hdr = (sr_icmp_hdr_t *)(packet + sizeof(sr_ethernet_hdr_t));
+        if (ntohs(iphdr->ip_p) == ip_protocol_icmp) { // it is an ICMP
+          sr_icmp_hdr_t * icmp_hdr = (sr_icmp_hdr_t *)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_icmp_hdr_t));
           if (icmp_hdr->icmp_type == 8) {
             // malloc size of ethernet header + ip header + icmp header
             uint8_t * icmp_msg = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
             unsigned int packet_length = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
 
             // set the icmp hdr
-            sr_icmp_hdr_t *new_hdr_icmp;
+            sr_icmp_hdr_t *new_hdr_icmp = (sr_icmp_hdr_t *)(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
             new_hdr_icmp->icmp_type = 0;
             new_hdr_icmp->icmp_sum = 0;
-            uint16_t i_sum = cksum(new_hdr_icmp, sizeof(sr_icmp_hdr_t));
+            
+            uint16_t i_sum = cksum((uint8_t *)new_hdr_icmp, ntohs(iphdr->ip_len)-sizeof(sr_ip_hdr_t));
             new_hdr_icmp->icmp_sum = i_sum;
 
             // set the ip header
-            sr_ip_hdr_t *new_ip_hdr;
+            sr_ip_hdr_t *new_ip_hdr = (sr_ip_hdr_t *) (icmp_msg + sizeof(sr_ethernet_hdr_t));
             new_ip_hdr->ip_tos = iphdr->ip_tos; // do i need to use memcpy here?
             // memcpy(new_ip_hdr->ip_tos, iphdr->ip_tos, 8); // DC: do i put 8 bytes for this?
             new_ip_hdr->ip_len = htons(sizeof(packet - sizeof(sr_ethernet_hdr_t)));
@@ -188,20 +190,20 @@ void sr_handlepacket(struct sr_instance* sr,
             new_ip_hdr->ip_sum = 0;
             new_ip_hdr->ip_src = iphdr->ip_dst; // DC: is this okay
             new_ip_hdr->ip_dst = iphdr->ip_src;
-            uint16_t ip_sum = cksum(new_ip_hdr, sizeof(sr_ip_hdr_t));
+            uint16_t ip_sum = cksum(new_ip_hdr, new_ip_hdr->ip_hl*4);
             new_ip_hdr->ip_sum = ip_sum;
             // do i need to update new_ip_hdr->id?
             
             // set the ethernet header
-            sr_ethernet_hdr_t *new_eth_hdr;
+            sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t*) (icmp_msg);
             memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
             memcpy(new_eth_hdr->ether_shost, eth_hdr->ether_dhost, ETHER_ADDR_LEN);
             new_eth_hdr->ether_type = htons(ethertype_ip);
             
             // construct the packet
-            memcpy(icmp_msg, new_eth_hdr, sizeof(sr_ethernet_hdr_t));
-            memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t), new_ip_hdr, sizeof(sr_ip_hdr_t));
-            memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t), new_hdr_icmp, sizeof(sr_icmp_hdr_t));
+            // memcpy(icmp_msg, new_eth_hdr, sizeof(sr_ethernet_hdr_t));
+            // memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t), new_ip_hdr, sizeof(sr_ip_hdr_t));
+            // memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t), new_hdr_icmp, sizeof(sr_icmp_hdr_t));
 
             // find dest interface
             struct sr_if *new_dest = get_interface_from_ip(sr, iphdr->ip_dst);
@@ -217,16 +219,17 @@ void sr_handlepacket(struct sr_instance* sr,
           unsigned int packet_length = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
 
           // set the icmp hdr
-          sr_icmp_hdr_t *hdr_icmp;
+          sr_icmp_hdr_t *hdr_icmp = (sr_icmp_hdr_t*) (icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
           hdr_icmp->icmp_type = 3;
           hdr_icmp->icmp_code = 3;
           memcpy(hdr_icmp->data, (uint8_t *)iphdr, sizeof(iphdr)); // DC: make sure the 2nd and 3rd params are correct
           hdr_icmp->icmp_sum = 0;
-          uint16_t icmp_sum = cksum(hdr_icmp, sizeof(sr_icmp_hdr_t));
+          // ntohs(iphdr->ip_len)-sizeof(sr_ip_hdr_t)
+          uint16_t icmp_sum = cksum((uint8_t *)hdr_icmp, ntohs(iphdr->ip_len)-sizeof(sr_ip_hdr_t));
           hdr_icmp->icmp_sum = icmp_sum;
 
           // set the ip header
-          sr_ip_hdr_t *new_ip_hdr;
+          sr_ip_hdr_t *new_ip_hdr = (sr_ip_hdr_t *) (icmp_msg + sizeof(sr_ethernet_hdr_t));
           new_ip_hdr->ip_tos = iphdr->ip_tos; // do i need to use memcpy here?
           // memcpy(new_ip_hdr->ip_tos, iphdr->ip_tos, 8); // DC: do i put 8 bytes for this?
           new_ip_hdr->ip_len = htons(sizeof(packet - sizeof(sr_ethernet_hdr_t)));
@@ -235,20 +238,20 @@ void sr_handlepacket(struct sr_instance* sr,
           new_ip_hdr->ip_sum = 0;
           new_ip_hdr->ip_src = iphdr->ip_dst; // DC: is this okay
           new_ip_hdr->ip_dst = iphdr->ip_src;
-          uint16_t ip_sum = cksum(new_ip_hdr, sizeof(sr_ip_hdr_t));
+          uint16_t ip_sum = cksum((uint8_t *)new_ip_hdr, new_ip_hdr->ip_len *4);
           new_ip_hdr->ip_sum = ip_sum;
           // do i need to update new_ip_hdr->id?
           
           // set the ethernet header
-          sr_ethernet_hdr_t *new_eth_hdr;
+          sr_ethernet_hdr_t *new_eth_hdr = (sr_ip_hdr_t *) (icmp_msg);
           memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
           memcpy(new_eth_hdr->ether_shost, eth_hdr->ether_dhost, ETHER_ADDR_LEN);
           new_eth_hdr->ether_type = htons(ethertype_ip);
           
           // construct the packet
-          memcpy(icmp_msg, new_eth_hdr, sizeof(sr_ethernet_hdr_t));
-          memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t), new_ip_hdr, sizeof(sr_ip_hdr_t));
-          memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t), hdr_icmp, sizeof(sr_icmp_hdr_t));
+          // memcpy(icmp_msg, new_eth_hdr, sizeof(sr_ethernet_hdr_t));
+          // memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t), new_ip_hdr, sizeof(sr_ip_hdr_t));
+          // memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t), hdr_icmp, sizeof(sr_icmp_hdr_t));
 
           // find dest interface
           struct sr_if *new_dest = get_interface_from_ip(sr, iphdr->ip_dst);
@@ -270,16 +273,17 @@ void sr_handlepacket(struct sr_instance* sr,
           unsigned int packet_length = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
 
           // set the icmp hdr
-          sr_icmp_hdr_t *hdr_icmp;
+          sr_icmp_hdr_t *hdr_icmp = (sr_icmp_hdr_t *)(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
           hdr_icmp->icmp_type = 11;
           hdr_icmp->icmp_code = 0;
           memcpy(hdr_icmp->data, (uint8_t *)iphdr, sizeof(iphdr)); // DC: make sure the 2nd and 3rd params are correct
           hdr_icmp->icmp_sum = 0;
-          uint16_t icmp_sum = cksum(hdr_icmp, sizeof(sr_icmp_hdr_t));
+          
+          uint16_t icmp_sum = cksum((uint8_t *)hdr_icmp, ntohs(iphdr->ip_len)-sizeof(sr_ip_hdr_t));
           hdr_icmp->icmp_sum = icmp_sum;
 
           // set the ip header
-          sr_ip_hdr_t *new_ip_hdr;
+          sr_ip_hdr_t *new_ip_hdr = (sr_ip_hdr_t *) (icmp_msg + sizeof(sr_ethernet_hdr_t));
           new_ip_hdr->ip_tos = iphdr->ip_tos; // do i need to use memcpy here?
           // memcpy(new_ip_hdr->ip_tos, iphdr->ip_tos, 8); // DC: do i put 8 bytes for this?
           new_ip_hdr->ip_len = htons(sizeof(packet - sizeof(sr_ethernet_hdr_t)));
@@ -288,20 +292,20 @@ void sr_handlepacket(struct sr_instance* sr,
           new_ip_hdr->ip_sum = 0;
           new_ip_hdr->ip_src = iphdr->ip_dst; // DC: is this okay
           new_ip_hdr->ip_dst = iphdr->ip_src;
-          uint16_t ip_sum = cksum(new_ip_hdr, sizeof(sr_ip_hdr_t));
+          uint16_t ip_sum = cksum((uint8_t *)new_ip_hdr, new_ip_hdr->ip_len *4);
           new_ip_hdr->ip_sum = ip_sum;
           // do i need to update new_ip_hdr->id?
           
           // set the ethernet header
-          sr_ethernet_hdr_t *new_eth_hdr;
+          sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *) (icmp_msg);
           // memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN); -- need the nexthop mac
           memcpy(new_eth_hdr->ether_shost, eth_hdr->ether_dhost, ETHER_ADDR_LEN);
           new_eth_hdr->ether_type = htons(ethertype_ip);
           
           // construct the packet
-          memcpy(icmp_msg, new_eth_hdr, sizeof(sr_ethernet_hdr_t));
-          memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t), new_ip_hdr, sizeof(sr_ip_hdr_t));
-          memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t), hdr_icmp, sizeof(sr_icmp_hdr_t));
+          // memcpy(icmp_msg, new_eth_hdr, sizeof(sr_ethernet_hdr_t));
+          // memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t), new_ip_hdr, sizeof(sr_ip_hdr_t));
+          // memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t), hdr_icmp, sizeof(sr_icmp_hdr_t));
 
           // find dest interface
           struct sr_if *new_dest = get_interface_from_ip(sr, iphdr->ip_dst);
@@ -324,15 +328,15 @@ void sr_handlepacket(struct sr_instance* sr,
           unsigned int packet_length = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
 
           // set the icmp hdr
-          sr_icmp_hdr_t *new_hdr_icmp;
+          sr_icmp_hdr_t *new_hdr_icmp = (sr_icmp_hdr_t *)(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
           new_hdr_icmp->icmp_type = 3;
           new_hdr_icmp->icmp_code = 3;
           new_hdr_icmp->icmp_sum = 0;
-          uint16_t i_sum = cksum(new_hdr_icmp, sizeof(sr_icmp_hdr_t));
+          uint16_t i_sum = cksum(new_hdr_icmp, ntohs(iphdr->ip_len)-sizeof(sr_ip_hdr_t));
           new_hdr_icmp->icmp_sum = i_sum;
 
           // set the ip header
-          sr_ip_hdr_t *new_ip_hdr;
+          sr_ip_hdr_t *new_ip_hdr = (sr_ip_hdr_t *) (icmp_msg + sizeof(sr_ethernet_hdr_t));
           new_ip_hdr->ip_tos = iphdr->ip_tos; // do i need to use memcpy here?
           // memcpy(new_ip_hdr->ip_tos, iphdr->ip_tos, 8); // DC: do i put 8 bytes for this?
           new_ip_hdr->ip_len = htons(sizeof(packet - sizeof(sr_ethernet_hdr_t)));
@@ -341,7 +345,7 @@ void sr_handlepacket(struct sr_instance* sr,
           new_ip_hdr->ip_sum = 0;
           new_ip_hdr->ip_src = iphdr->ip_dst; // DC: is this okay
           new_ip_hdr->ip_dst = iphdr->ip_src;
-          uint16_t ip_sum = cksum(new_ip_hdr, sizeof(sr_ip_hdr_t));
+          uint16_t ip_sum = cksum((uint8_t)new_ip_hdr, iphdr->ip_hl *4);
           new_ip_hdr->ip_sum = ip_sum;
           // do i need to update new_ip_hdr->id?
           
@@ -352,9 +356,9 @@ void sr_handlepacket(struct sr_instance* sr,
           new_eth_hdr->ether_type = htons(ethertype_ip);
           
           // construct the packet
-          memcpy(icmp_msg, new_eth_hdr, sizeof(sr_ethernet_hdr_t));
-          memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t), new_ip_hdr, sizeof(sr_ip_hdr_t));
-          memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t), new_hdr_icmp, sizeof(sr_icmp_hdr_t));
+          // memcpy(icmp_msg, new_eth_hdr, sizeof(sr_ethernet_hdr_t));
+          // memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t), new_ip_hdr, sizeof(sr_ip_hdr_t));
+          // memcpy(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t), new_hdr_icmp, sizeof(sr_icmp_hdr_t));
 
           // find dest interface
           struct sr_if *new_dest = get_interface_from_ip(sr, new_ip_hdr->ip_dst);
@@ -385,7 +389,7 @@ void sr_handlepacket(struct sr_instance* sr,
             new_ip->ip_sum = 0;
             new_ip->ip_src = iphdr->ip_dst; // DC: is this okay
             new_ip->ip_dst = curr->ip;
-            uint16_t ip_sum = cksum(new_ip, sizeof(sr_ip_hdr_t));
+            uint16_t ip_sum = cksum((uint8_t *)new_ip, new_ip->ip_hl *4);
             new_ip->ip_sum = ip_sum;
             // do i need to update new_ip_hdr->id?
             // combine
