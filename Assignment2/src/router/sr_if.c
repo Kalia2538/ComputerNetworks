@@ -67,13 +67,25 @@ struct sr_if *get_interface_from_ip(struct sr_instance *sr, uint32_t ip_address)
   struct sr_if *dest_iface = NULL;
   while (cur_iface)
   {
+    printf("Checking interface %s with IP: 0x%x\n", cur_iface->name, cur_iface->ip);
+    struct in_addr iface_ip;
+    iface_ip.s_addr = htonl(cur_iface->ip);
+    printf("Interface readable IP: %s\n", inet_ntoa(iface_ip));
+
     if (ip_address == cur_iface->ip)
     {
+      printf("Match found: interface %s\n", cur_iface->name);
       dest_iface = cur_iface;
       break;
     }
     cur_iface = cur_iface->next;
   }
+
+  if (!dest_iface)
+  {
+    printf("No matching interface found.\n");
+  }
+
   return dest_iface;
 } /* -- sr_get_interface_from_ip -- */
 
