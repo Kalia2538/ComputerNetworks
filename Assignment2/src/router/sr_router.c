@@ -78,67 +78,27 @@ void sr_handlepacket(struct sr_instance* sr,
   assert(interface);
 
   printf("*** -> Received packet of length %d \n",len);
-
-  /* fill in code here */
-  
-  // function passes in a packet
-  // casting to packet struct
-  // struct sr_packet *sr_pack = (struct sr_packet *) packet;
-  // int result = packet_type(packet);
-  // assert(result != 0); // ensures the packet is ip or arp
-  printf("recieved packet\n");
-  print_hdrs(packet, len);
-  
+  print_hdrs(packet, len);  
   sr_ethernet_hdr_t *eth_hdr = (sr_ethernet_hdr_t *) packet;
-  printf("made it past the printing of hdrs\n");
   
   // TODO: Do i need to check if the ethernet header is properly formatted?
-    // ex: do i need to check the src and dest addrs?
-
   switch (ethertype(packet)) {
     case ethertype_arp: { // arp
       sr_arp_hdr_t *arphdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       // TODO: make sure the arp is well formatted
-      printf("the arp op %u\n", arphdr->ar_op);
       if (ntohs(arphdr->ar_op)  == arp_op_request) {
-        // check if target ip in our router      
         struct sr_if * our_interface = get_interface_from_ip(sr, arphdr->ar_tip);
-        //yes
-        if (our_interface != NULL) {
-          printf("addressed to our router!\n");
+        if (our_interface != NULL) { // addressed to us
           // allocate space for the newly created reply
           uint8_t * reply = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
-          // TODO: add error checking for the malloc call
+          if (reply == NULL) {
+            fprintf(stderr, "Error: malloc failed while creating ARP reply.\n");
+            return;
+          }
           create_arp_reply(reply, our_interface, eth_hdr->ether_shost, arphdr->ar_sip);
-    
-          // // instantiate ethernet header
-          // sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *)(reply);
-          // memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
-          // memcpy(new_eth_hdr->ether_shost, our_interface->addr, ETHER_ADDR_LEN);
-          // new_eth_hdr->ether_type = htons(ethertype_arp);
-
-          // // copy over the ethernet header  
-          // // memcpy(reply, new_eth_hdr, sizeof(sr_ethernet_hdr_t)); // TODO: double check the math here
-          
-          // // instantiate arp header
-          // sr_arp_hdr_t * new_arp_hdr = (sr_arp_hdr_t*)(reply + sizeof(sr_ethernet_hdr_t));
-          // new_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
-          // new_arp_hdr->ar_pro = htons(ethertype_ip);
-          // new_arp_hdr->ar_hln = arphdr->ar_hln; // assuming this variable should be the same as last time
-          // new_arp_hdr->ar_pln = arphdr->ar_pln;
-          // new_arp_hdr->ar_op = htons(arp_op_reply);
-          // memcpy(new_arp_hdr->ar_sha, eth_hdr->ether_dhost, ETHER_ADDR_LEN);
-          // new_arp_hdr->ar_sip = our_interface->ip;
-          // memcpy(new_arp_hdr->ar_tha, eth_hdr->ether_shost, ETHER_ADDR_LEN);
-          // new_arp_hdr->ar_tip = arphdr->ar_sip;
-
-          // copy over the new arp header
-          // memcpy(reply + sizeof(sr_ethernet_hdr_t), new_arp_hdr, sizeof(sr_arp_hdr_t));
-          unsigned int length = sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t);
-          
+          unsigned int length = sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t);          
           printf("packet(reply) to be sent \n");
           print_hdrs(reply, length);
-          // send the packet
           int check = sr_send_packet(sr, reply, length, our_interface->name);
           printf("if 0, sending was successfull (allegedly): %d\n", check);
           // free the reply
@@ -194,12 +154,12 @@ void sr_handlepacket(struct sr_instance* sr,
         break;
       }
     }
-    case ethertype_ip: { // ip
-      
+    case ethertype_ip: { // ip 
+      printf("we have an ip packet\n");
       sr_ip_hdr_t *iphdr = (sr_ip_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       // TODO: Verify length
       // verify checksum
-      assert(cksum((uint8_t)iphdr, sizeof(sr_ip_hdr_t)) == iphdr->ip_sum); // TODO: make sure these are the correct parameters
+      assert(cksum((uint8_t *)iphdr, sizeof(sr_ip_hdr_t)) == iphdr->ip_sum); // TODO: make sure these are the correct parameters
       struct sr_if *interface = get_interface_from_ip(sr, iphdr->ip_dst);
       if (interface != NULL) { // addressed to us
         if (iphdr->ip_p == ip_protocol_icmp) { // it is an ICMP
