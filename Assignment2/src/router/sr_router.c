@@ -87,6 +87,10 @@ void sr_handlepacket(struct sr_instance* sr,
       sr_arp_hdr_t *arphdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       // TODO: make sure the arp is well formatted
       if (ntohs(arphdr->ar_op)  == arp_op_request) {
+        struct sr_rt * entry = find_rt_dest(sr, arphdr->ar_tip);
+        uint32_t addr_to_find = entry->mask.s_addr & entry->dest.s_addr;
+        printf("this is entry.addr: %d\n", entry->dest.s_addr);
+        printf("this is the addr to find %d\n", addr_to_find);
         struct sr_if * our_interface = get_interface_from_ip(sr, arphdr->ar_tip);
         if (our_interface != NULL) { // addressed to us
           // allocate space for the newly created reply
