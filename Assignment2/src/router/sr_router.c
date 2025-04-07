@@ -591,7 +591,7 @@ struct sr_rt* find_rt_dest(struct sr_instance * sr, uint32_t dest_ip) {
     curr = curr->next;
   }
 
-  if (lpm_mask != 0) {
+  if (lpm_mask == 0) {
     return NULL;
   }
 
