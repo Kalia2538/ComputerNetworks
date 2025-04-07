@@ -91,7 +91,7 @@ void sr_handlepacket(struct sr_instance* sr,
         uint32_t addr_to_find = entry->mask.s_addr & entry->dest.s_addr;
         printf("this is entry.addr: %d\n", entry->dest.s_addr);
         printf("this is the addr to find %d\n", addr_to_find);
-        struct sr_if * our_interface = get_interface_from_ip(sr, arphdr->ar_tip);
+        struct sr_if * our_interface = get_interface_from_ip(sr, addr_to_find);
         if (our_interface != NULL) { // addressed to us
           // allocate space for the newly created reply
           uint8_t * reply = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
