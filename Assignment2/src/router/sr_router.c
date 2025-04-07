@@ -84,8 +84,7 @@ void sr_handlepacket(struct sr_instance* sr,
   // TODO: Do i need to check if the ethernet header is properly formatted?
   switch (ethertype(packet)) {
     case ethertype_arp: { // arp
-      sr_arp_hdr_t *arphdr; 
-      arphdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
+      sr_arp_hdr_t *arphdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       // TODO: make sure the arp is well formatted
       if (ntohs(arphdr->ar_op)  == arp_op_request) {
         struct sr_if * our_interface = get_interface_from_ip(sr, arphdr->ar_tip);
