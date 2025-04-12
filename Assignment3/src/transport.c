@@ -21,7 +21,17 @@
 
 
 enum { 
-    CSTATE_ESTABLISHED
+    CSTATE_ESTABLISHED,
+    CSTATE_CLOSED,
+    CSTATE_LISTEN,
+    CSTATE_SYN_SENT,
+    CSTATE_SYN_RECEIVED,
+    CSTATE_SYN_ACK_SENT,
+    CSTATE_SYN_ACK_RECEIVED,
+    CSTATE_FIN_SENT,
+    CSTATE_FIN_RECIEVED,
+    CSTATE_CLOSE_WAIT,
+    CSTATE_LAST_ACK
 
 };    /* obviously you should have more states */
 
@@ -99,6 +109,8 @@ static void generate_initial_seq_num(context_t *ctx)
 #else
     /* you have to fill this up */
     /*ctx->initial_sequence_num =;*/
+    srand(time(NULL)); // seed the rng based on time (to get different sequences)
+    ctx->initial_sequence_num = rand() % 256; 
 #endif
 }
 
