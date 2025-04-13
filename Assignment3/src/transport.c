@@ -180,5 +180,13 @@ void our_dprintf(const char *format,...)
     fflush(stdout);
 }
 
+void send_packet(){
+    STCPHeader * packet = (STCPHeader *) malloc(sizeof(STCPHeader));
+    packet->th_seq = NULL;
+    packet->th_ack = NULL;
+    packet->th_off = NULL;
+    packet->th_flags = NULL;
+
+}
 
 
