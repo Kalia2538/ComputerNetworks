@@ -19,6 +19,11 @@
 #include "stcp_api.h"
 #include "transport.h"
 
+#define WIN_SIZE 3072 //
+#define STCPHdrSize sizeof(STCPHeader)
+
+
+
 
 enum { 
     CSTATE_ESTABLISHED,
@@ -36,6 +41,8 @@ enum {
 };    /* obviously you should have more states */
 
 
+
+
 /* this structure is global to a mysocket descriptor */
 typedef struct
 {
@@ -46,6 +53,15 @@ typedef struct
 
     /* any other connection-wide global variables go here */
 } context_t;
+
+// struct to return both the event type and STCP Header in wait_forPacket()
+
+typedef struct 
+{
+    int event;
+    STCPHeader * hdr;
+} event_hdr_t;
+
 
 
 static void generate_initial_seq_num(context_t *ctx);
@@ -75,6 +91,13 @@ void transport_init(mysocket_t sd, bool_t is_active)
 
     if (is_active) {
         // send syn packet
+        ssize_t num = send_packet(sd, ctx->initial_sequence_num, 0, TH_SYN, htons(WIN_SIZE));
+        if (num < (ssize_t)0) {
+            printf("[ERROR - ACTIVE OPEN]: error sending initial syn packet\n");
+            return;
+        }
+        // updating the state
+        ctx->connection_state = CSTATE_SYN_SENT;       
 
         // wait for syn ack
 
@@ -182,17 +205,42 @@ void our_dprintf(const char *format,...)
 
 
 // creates and sends a packet w/ given parameters
-static int send_packet(mysocket_t sd, int seq_num, unsigned int ack_num, uint8_t flag, uint16_t window){
-    STCPHeader * packet = (STCPHeader *) malloc(sizeof(STCPHeader));
+static ssize_t send_packet(mysocket_t sd, int seq_num, unsigned int ack_num, uint8_t flag, uint16_t window){
+    STCPHeader * packet = (STCPHeader *) malloc(STCPHdrSize);
     packet->th_seq = htonl(seq_num);
     packet->th_ack = htonl(ack_num);
     packet->th_off = 5;
     packet->th_flags = flag;
     packet->th_win = window;
 
-    ssize_t val = stcp_network_send(sd, packet, sizeof(STCPHeader));
+    ssize_t val = stcp_network_send(sd, packet, STCPHdrSize);
     free(packet);
     return val;
+}
+// ret.event = -2 => malloc error
+// ret.event = -1 => wrong hdr size
+static event_hdr_t* wait_for_packet(mysocket_t sd, context_t *context) {
+    char buff[sizeof(STCPHeader)]; // TODO: shoudl this be sctp_mss???
+    event_hdr_t * ret = (event_hdr_t *)malloc(sizeof(event_hdr_t));
+    ret->event = -2;
+    return ret;
+
+    // TODO: Error check this malloc call
+    while (1) {
+        // wait until we recieve a packet
+        int event = stcp_wait_for_event(sd, NETWORK_DATA, NULL);
+        // recieve data from the event
+        ssize_t recv = stcp_network_recv(sd, buff, STCP_MSS);
+
+        if (recv < (ssize_t)STCPHdrSize) {
+            printf("[ERROR - RECV PKT]: recieved less than STCP Header Size\n");
+            ret->event = -1;
+            return ret;
+        }
+        ret->event = event;
+        ret->hdr = (STCPHeader *) buff; // TODO: Do i need to error check this first?
+        return ret;
+    }
 }
 
 
