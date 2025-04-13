@@ -52,6 +52,15 @@ typedef struct
     tcp_seq initial_sequence_num;
 
     /* any other connection-wide global variables go here */
+    tcp_seq seq;
+    tcp_seq recv_seq;
+    unsigned int recv_window_size;
+    uint32_t recv_next_byte;
+    uint32_t recv_prev_byte;
+    tcp_seq peer_seq;
+    tcp_seq win_begin;
+
+
 } context_t;
 
 // struct to return both the event type and STCP Header in wait_forPacket()
@@ -97,18 +106,100 @@ void transport_init(mysocket_t sd, bool_t is_active)
             return;
         }
         // updating the state
-        ctx->connection_state = CSTATE_SYN_SENT;       
+        ctx->connection_state = CSTATE_SYN_SENT;
 
         // wait for syn ack
+        while(1) {
+            event_hdr_t * e_hdr = wait_for_packet(sd, ctx);
+            if (e_hdr->event == 2) { // we recieved network data
+                STCPHeader * header = e_hdr->hdr;
+                // check for SYN & ACK (ignore other flags) and seq nums
+
+                // TODO: make this a helper function (synack_update_context)for readability
+                if (((header->th_flags & (TH_SYN | TH_ACK)) == (TH_SYN | TH_ACK)) && (((tcp_seq)ntohl(header->th_ack)) == ctx->seq)) {
+                    // weve received a syn-ack packet
+                    // set rec_window_size
+                    if (ntohs(header->th_win) > 0) {
+                        ctx->recv_window_size = ntohs(header->th_win);
+                    } else {
+                        ctx->recv_window_size = 1;
+                    }
+                    ctx->recv_next_byte = ntohl(header->th_seq) + 1;
+                    ctx->recv_prev_byte = ntohl(header->th_seq);
+                    ctx->peer_seq = ntohl(header->th_seq);
+                    ctx->win_begin = ctx->recv_next_byte;
+                    // do stuff
+                    break;
+                }
+            } 
+        }
+        ctx->connection_state = CSTATE_SYN_ACK_RECEIVED;
 
         // send ack
+        ssize_t num = send_packet(sd, ctx->seq, ctx->recv_next_byte, TH_ACK, htons(WIN_SIZE));
+        if (num < (ssize_t)0) {
+            printf("[ERROR - ACTIVE OPEN]: error sending ack packet\n");
+            return;
+        }
+        ctx->seq++;
 
     } else {
         // wait for syn
+        while(1) {
+            event_hdr_t * e_hdr = wait_for_packet(sd, ctx);
+            if (e_hdr->event == 2) { // we recieved network data
+                STCPHeader * header = e_hdr->hdr;
+                // check for SYN & ACK (ignore other flags) and seq nums
+
+                // TODO: make this a helper function (syn_update_context)for readability
+                if ((header->th_flags & TH_SYN)) {
+                    // weve received a synpacket
+                    // set rec_window_size
+                    if (ntohs(header->th_win) > 0) {
+                        ctx->recv_window_size = ntohs(header->th_win);
+                    } else {
+                        ctx->recv_window_size = 1;
+                    }
+                    ctx->recv_next_byte = ntohl(header->th_seq) + 1;
+                    ctx->recv_prev_byte = ntohl(header->th_seq);
+                    ctx->peer_seq = ntohl(header->th_seq);
+                    break;
+                }
+            } 
+        }
+        ctx->connection_state = CSTATE_SYN_RECEIVED;
 
         // send syn ack
+        ssize_t num = send_packet(sd, ctx->seq, ctx->recv_next_byte, (TH_SYN | TH_ACK), htons(WIN_SIZE));
+        if (num < (ssize_t)0) {
+            printf("[ERROR - ACTIVE OPEN]: error sending ack packet\n");
+            return;
+        }
+        ctx->seq++;
 
         // wait for ack
+        while(1) {
+            event_hdr_t * e_hdr = wait_for_packet(sd, ctx);
+            if (e_hdr->event == 2) { // we recieved network data
+                STCPHeader * header = e_hdr->hdr;
+                // check ACK (ignore other flags) and seq nums
+
+                // TODO: make this a helper function (syn_update_context)for readability
+                if ((header->th_flags & (TH_ACK)) && (((tcp_seq)ntohl(header->th_ack)) == ctx->seq)) {
+                    // weve received a ack packet
+                    // set rec_window_size
+                    if (ntohs(header->th_win) > 0) {
+                        ctx->recv_window_size = ntohs(header->th_win);
+                    } else {
+                        ctx->recv_window_size = 1;
+                    }
+                    ctx->recv_next_byte = ntohl(header->th_seq) + 1;
+                    ctx->recv_prev_byte = ntohl(header->th_seq);
+                    ctx->win_begin = ctx->recv_next_byte;
+                    break;
+                }
+            } 
+        }
 
     }
     ctx->connection_state = CSTATE_ESTABLISHED;
@@ -217,6 +308,7 @@ static ssize_t send_packet(mysocket_t sd, int seq_num, unsigned int ack_num, uin
     free(packet);
     return val;
 }
+
 // ret.event = -2 => malloc error
 // ret.event = -1 => wrong hdr size
 static event_hdr_t* wait_for_packet(mysocket_t sd, context_t *context) {
@@ -235,6 +327,7 @@ static event_hdr_t* wait_for_packet(mysocket_t sd, context_t *context) {
         if (recv < (ssize_t)STCPHdrSize) {
             printf("[ERROR - RECV PKT]: recieved less than STCP Header Size\n");
             ret->event = -1;
+            free(ret);
             return ret;
         }
         ret->event = event;
