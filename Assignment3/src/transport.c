@@ -180,13 +180,19 @@ void our_dprintf(const char *format,...)
     fflush(stdout);
 }
 
-void send_packet(){
-    STCPHeader * packet = (STCPHeader *) malloc(sizeof(STCPHeader));
-    packet->th_seq = NULL;
-    packet->th_ack = NULL;
-    packet->th_off = NULL;
-    packet->th_flags = NULL;
 
+// creates and sends a packet w/ given parameters
+static int send_packet(mysocket_t sd, int seq_num, unsigned int ack_num, uint8_t flag, uint16_t window){
+    STCPHeader * packet = (STCPHeader *) malloc(sizeof(STCPHeader));
+    packet->th_seq = htonl(seq_num);
+    packet->th_ack = htonl(ack_num);
+    packet->th_off = 5;
+    packet->th_flags = flag;
+    packet->th_win = window;
+
+    ssize_t val = stcp_network_send(sd, packet, sizeof(STCPHeader));
+    free(packet);
+    return val;
 }
 
 
