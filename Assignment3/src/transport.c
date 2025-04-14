@@ -18,6 +18,8 @@
 #include "mysock.h"
 #include "stcp_api.h"
 #include "transport.h"
+#include <arpa/inet.h>
+
 
 #define WIN_SIZE 3072 //
 #define STCPHdrSize sizeof(STCPHeader)
@@ -81,6 +83,12 @@ typedef struct
 
 static void generate_initial_seq_num(context_t *ctx);
 static void control_loop(mysocket_t sd, context_t *ctx);
+static void event_close(mysocket_t sd, context_t * context);
+static void event_ntwrk(mysocket_t sd, context_t * context);
+static void event_app(mysocket_t sd, context_t * context);
+static event_hdr_t* wait_for_packet(mysocket_t sd, context_t *context);
+static ssize_t send_syn_ack(mysocket_t sd, int seq_num, unsigned int ack_num, uint8_t flag, uint16_t window);
+
 
 
 /* initialise the transport layer, and start the main loop, handling
@@ -142,7 +150,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
         ctx->connection_state = CSTATE_SYN_ACK_RECEIVED;
 
         // send ack
-        ssize_t num = send_syn_ack(sd, ctx->seq, ctx->recv_next_byte, TH_ACK, htons(WIN_SIZE));
+        num = send_syn_ack(sd, ctx->seq, ctx->recv_next_byte, TH_ACK, htons(WIN_SIZE));
         if (num < (ssize_t)0) {
             printf("[ERROR - ACTIVE OPEN]: error sending ack packet\n");
             return;
@@ -259,14 +267,16 @@ static void control_loop(mysocket_t sd, context_t *ctx)
         {
             /* the application has requested that data be sent */
             /* see stcp_app_recv() */
+            event_app(sd, ctx);
         }
 
         if (event & NETWORK_DATA) {
             /* received data from STCP peer */
+            event_ntwrk(sd,ctx);
         }
 
         if (event & APP_CLOSE_REQUESTED) {
-            
+            event_close(sd, ctx);
         }
 
         /* etc. */
@@ -345,8 +355,10 @@ static event_hdr_t* wait_for_packet(mysocket_t sd, context_t *context) {
 static void event_app(mysocket_t sd, context_t * context) {
     tcp_seq in_flight_bytes = context->seq - context->prev_ack;
     unsigned int rem_win = WIN_SIZE - in_flight_bytes;
-    if (rem_win < 0) {
+    if (in_flight_bytes > WIN_SIZE) {
         rem_win = 0;
+    } else{
+        rem_win = WIN_SIZE - in_flight_bytes;
     }
 
     if (rem_win == 0) {
