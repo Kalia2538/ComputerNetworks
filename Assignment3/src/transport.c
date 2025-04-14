@@ -103,6 +103,32 @@ void transport_init(mysocket_t sd, bool_t is_active)
     assert(ctx);
 
     generate_initial_seq_num(ctx);
+    ctx->done =FALSE;
+    ctx->connection_state = -1;
+
+    // initialize context variables
+    bool_t done;    /* TRUE once connection is closed */
+
+    int connection_state;   /* state of the connection (established, etc.) */
+    tcp_seq initial_sequence_num;
+
+    /* any other connection-wide global variables go here */
+    tcp_seq seq;
+    tcp_seq recv_seq;
+    unsigned int recv_window_size;
+    uint32_t recv_next_byte;
+    uint32_t recv_prev_byte;
+    tcp_seq peer_seq;
+    tcp_seq win_begin;
+    tcp_seq prev_ack;
+    int recv_fin; // 0 if false 1 if true
+    int is_active; // 0 if not active 1 if active
+    int sent_ack; //0 if false, 1 if true
+    int sent_fin;
+    int fin_ack; // 0 for false, 1 for true
+
+
+
 
     /* XXX: you should send a SYN packet here if is_active, or wait for one
      * to arrive if !is_active.  after the handshake completes, unblock the
