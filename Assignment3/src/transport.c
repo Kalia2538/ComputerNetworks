@@ -140,6 +140,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
             printf("[ERROR - ACTIVE OPEN]: error sending initial syn packet\n");
             return;
         }
+        ctx->seq++;
         // updating the state
         ctx->connection_state = CSTATE_SYN_SENT;
 
