@@ -59,6 +59,12 @@ typedef struct
     uint32_t recv_prev_byte;
     tcp_seq peer_seq;
     tcp_seq win_begin;
+    tcp_seq prev_ack;
+    int recv_fin; // 0 if false 1 if true
+    int is_active; // 0 if not active 1 if active
+    int sent_ack; //0 if false, 1 if true
+    int sent_fin;
+    int fin_ack; // 0 for false, 1 for true
 
 
 } context_t;
@@ -100,7 +106,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
 
     if (is_active) {
         // send syn packet
-        ssize_t num = send_packet(sd, ctx->initial_sequence_num, 0, TH_SYN, htons(WIN_SIZE));
+        ssize_t num = send_syn_ack(sd, ctx->initial_sequence_num, 0, TH_SYN, htons(WIN_SIZE));
         if (num < (ssize_t)0) {
             printf("[ERROR - ACTIVE OPEN]: error sending initial syn packet\n");
             return;
@@ -136,7 +142,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
         ctx->connection_state = CSTATE_SYN_ACK_RECEIVED;
 
         // send ack
-        ssize_t num = send_packet(sd, ctx->seq, ctx->recv_next_byte, TH_ACK, htons(WIN_SIZE));
+        ssize_t num = send_syn_ack(sd, ctx->seq, ctx->recv_next_byte, TH_ACK, htons(WIN_SIZE));
         if (num < (ssize_t)0) {
             printf("[ERROR - ACTIVE OPEN]: error sending ack packet\n");
             return;
@@ -170,7 +176,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
         ctx->connection_state = CSTATE_SYN_RECEIVED;
 
         // send syn ack
-        ssize_t num = send_packet(sd, ctx->seq, ctx->recv_next_byte, (TH_SYN | TH_ACK), htons(WIN_SIZE));
+        ssize_t num = send_syn_ack(sd, ctx->seq, ctx->recv_next_byte, (TH_SYN | TH_ACK), htons(WIN_SIZE));
         if (num < (ssize_t)0) {
             printf("[ERROR - ACTIVE OPEN]: error sending ack packet\n");
             return;
@@ -296,7 +302,7 @@ void our_dprintf(const char *format,...)
 
 
 // creates and sends a packet w/ given parameters
-static ssize_t send_packet(mysocket_t sd, int seq_num, unsigned int ack_num, uint8_t flag, uint16_t window){
+static ssize_t send_syn_ack(mysocket_t sd, int seq_num, unsigned int ack_num, uint8_t flag, uint16_t window){
     STCPHeader * packet = (STCPHeader *) malloc(STCPHdrSize);
     packet->th_seq = htonl(seq_num);
     packet->th_ack = htonl(ack_num);
@@ -304,7 +310,7 @@ static ssize_t send_packet(mysocket_t sd, int seq_num, unsigned int ack_num, uin
     packet->th_flags = flag;
     packet->th_win = window;
 
-    ssize_t val = stcp_network_send(sd, packet, STCPHdrSize);
+    size_t val = stcp_network_send(sd, packet, STCPHdrSize);
     free(packet);
     return val;
 }
@@ -336,4 +342,167 @@ static event_hdr_t* wait_for_packet(mysocket_t sd, context_t *context) {
     }
 }
 
+static void event_app(mysocket_t sd, context_t * context) {
+    tcp_seq in_flight_bytes = context->seq - context->prev_ack;
+    unsigned int rem_win = WIN_SIZE - in_flight_bytes;
+    if (rem_win < 0) {
+        rem_win = 0;
+    }
 
+    if (rem_win == 0) {
+        printf("[ERROR - EVENT_APP]: rem_win <= 0");
+        return;
+    }
+
+    size_t to_send_size;
+    if (rem_win < 0) {
+        to_send_size = rem_win;
+    } else {
+        to_send_size = 100;
+    }
+    char buff[100];
+    ssize_t rec_size = stcp_app_recv(sd, buff, to_send_size);
+    // convert buff to stcp hdr
+    STCPHeader * rec_hdr = (STCPHeader * ) buff;
+
+    STCPHeader * ack_hdr = (STCPHeader *) malloc(STCPHdrSize);
+    ack_hdr->th_seq = htonl(context->seq);
+    ack_hdr->th_ack = htonl(context->recv_next_byte);
+    ack_hdr->th_off = 5;
+    ack_hdr->th_flags = TH_ACK;
+    ack_hdr->th_win = htons(WIN_SIZE - (context->recv_next_byte - context->recv_prev_byte));
+
+    char * msg = (char *) malloc(STCPHdrSize + rec_size);
+    memcpy(msg, ack_hdr, STCPHdrSize);
+    memcpy(msg + STCPHdrSize, rec_hdr, rec_size);
+    stcp_network_send(sd, msg, STCPHdrSize + rec_size);
+    context->seq += rec_size;
+
+    free(ack_hdr);
+    free(msg);
+
+    return;
+
+}
+
+static void event_ntwrk(mysocket_t sd, context_t * context) {
+    size_t max_size = STCP_MSS + STCPHdrSize;
+    char buff[max_size];
+    ssize_t rec_size = stcp_network_recv(sd, buff, max_size);
+    size_t rec_msg_len = rec_size - STCPHdrSize;    
+    STCPHeader * rec_hdr = (STCPHeader *) buff;
+    context->recv_window_size = rec_hdr->th_win;
+
+
+    uint16_t req_seq = ntohl(rec_hdr->th_seq);
+    uint8_t rec_flags = rec_hdr->th_flags;
+
+
+    // if we get a duplicate packet
+    if (context->recv_seq > req_seq) {
+        ssize_t num = send_syn_ack(sd, context->seq, context->recv_next_byte, TH_ACK, htons(WIN_SIZE));
+        if (num < (ssize_t)0) {
+            printf("[ERROR - NETWORK EVENT]: error sending ack packet\n");
+            return;
+        }
+    }
+
+    // if we have an ack
+    if (rec_flags & TH_ACK) {
+        uint32_t rec_ack = ntohl(rec_hdr->th_ack);
+
+        // update prev ack
+        if (rec_ack > context->prev_ack) {
+            context->prev_ack = rec_ack;
+        }
+    }
+    // ----
+    if (rec_size > STCPHdrSize ) {
+        // check for fin flag
+        uint16_t seq_n_size = req_seq + rec_msg_len;
+        if (rec_flags & TH_FIN) {
+            context->recv_prev_byte = seq_n_size;
+            context->recv_next_byte = seq_n_size + 1;
+            context->recv_fin = 1;
+        } else { // no fin flag
+            context->recv_prev_byte = seq_n_size - 1;
+            context->recv_next_byte = seq_n_size;
+        }
+
+        // send an ack
+        ssize_t num = send_syn_ack(sd, context->seq, context->recv_next_byte, TH_ACK, htons(WIN_SIZE - (context->recv_next_byte - context->recv_prev_byte)));
+        if (num < (ssize_t)0) {
+            printf("[ERROR - NETWORK EVENT]: error sending ack packet\n");
+            return;
+        }
+
+        char * msg = (char *) malloc(rec_msg_len);
+        memcpy(msg, buff + STCPHdrSize, rec_msg_len);
+        stcp_app_send(sd, msg, rec_msg_len);
+        free(msg);
+
+        if (context->is_active == 0) {
+            stcp_fin_received(sd);
+        }
+
+    } else { // ----
+        if ((context->recv_fin == 0) && (rec_flags & TH_FIN)) {
+            context->recv_fin = 1;
+            context->prev_ack = req_seq;
+            context->recv_next_byte = req_seq + 1;
+
+            if (context->seq < WIN_SIZE + context->win_begin) {
+                ssize_t num = send_syn_ack(sd, context->seq, context->recv_next_byte, TH_ACK, htons(WIN_SIZE - (context->recv_next_byte - context->recv_prev_byte)));
+                if (num < (ssize_t)0) {
+                    printf("[ERROR - NETWORK EVENT]: error sending ack packet\n");
+                    return;
+                }
+                context->sent_ack = 1;
+            }
+
+            // check if we need to send a fin
+            if (context->sent_fin == 0) {
+                ssize_t num = send_syn_ack(sd, context->seq, context->recv_next_byte, (TH_ACK | TH_FIN), htons(WIN_SIZE - (context->recv_next_byte - context->recv_prev_byte)));
+                if (num < (ssize_t)0) {
+                    printf("[ERROR - NETWORK EVENT]: error sending fin packet\n");
+                    return;
+                }
+                context->sent_fin = 1;
+                context->seq++;
+            }
+            // fin sent
+            // no fin ack
+            // hdrflags & ack
+            //ack = seq
+            // todo: make this look shorter ... possibly pre-cal vars above
+        } else if ((rec_hdr->th_flags & TH_ACK) && context->sent_fin && context->fin_ack && ((ntohl(rec_hdr->th_ack)) == context->seq)){
+            context->fin_ack = 1;
+            
+            context->recv_prev_byte = ntohl(rec_hdr->th_seq);
+            context->recv_next_byte = ntohl(rec_hdr->th_seq) + 1;
+
+            context->win_begin = context->recv_next_byte;
+        } else {
+            context->win_begin = context->recv_next_byte;
+        }
+    }
+
+
+    // finisheddddddddd
+    if (context->sent_fin && context->recv_fin && context->fin_ack) {
+        context->done = TRUE; 
+    }
+
+}
+
+static void event_close(mysocket_t sd, context_t * context) {
+    if((context->is_active == 1) && (context->sent_fin == 0)) {
+        ssize_t num = send_syn_ack(sd, context->seq, context->recv_next_byte, (TH_ACK | TH_FIN), htons(WIN_SIZE - (context->recv_next_byte - context->recv_prev_byte)));
+        if (num < (ssize_t)0) {
+            printf("[ERROR - CLOSE EVENT]: error sending fin packet\n");
+            return;
+        }
+        context->sent_fin = 1;
+        context->seq ++;
+    }
+}
