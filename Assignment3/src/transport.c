@@ -320,7 +320,7 @@ static ssize_t send_syn_ack(mysocket_t sd, int seq_num, unsigned int ack_num, ui
     packet->th_flags = flag;
     packet->th_win = window;
 
-    size_t val = stcp_network_send(sd, packet, sizeof(STCPHeader));
+    size_t val = stcp_network_send(sd, packet, sizeof(STCPHeader), NULL);
     free(packet);
     return val;
 }
@@ -387,7 +387,7 @@ static void event_app(mysocket_t sd, context_t * context) {
     char * msg = (char *) malloc(sizeof(STCPHeader) + rec_size);
     memcpy(msg, ack_hdr, sizeof(STCPHeader));
     memcpy(msg + sizeof(STCPHeader), rec_hdr, rec_size);
-    stcp_network_send(sd, msg, sizeof(STCPHeader) + rec_size);
+    stcp_network_send(sd, msg, sizeof(STCPHeader) + rec_size, NULL);
     context->seq += rec_size;
 
     free(ack_hdr);
