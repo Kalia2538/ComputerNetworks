@@ -103,29 +103,24 @@ void transport_init(mysocket_t sd, bool_t is_active)
     assert(ctx);
 
     generate_initial_seq_num(ctx);
-    ctx->done =FALSE;
+    ctx->done = FALSE;
     ctx->connection_state = -1;
-
-    // initialize context variables
-    bool_t done;    /* TRUE once connection is closed */
-
-    int connection_state;   /* state of the connection (established, etc.) */
-    tcp_seq initial_sequence_num;
-
-    /* any other connection-wide global variables go here */
-    tcp_seq seq;
-    tcp_seq recv_seq;
-    unsigned int recv_window_size;
-    uint32_t recv_next_byte;
-    uint32_t recv_prev_byte;
-    tcp_seq peer_seq;
-    tcp_seq win_begin;
-    tcp_seq prev_ack;
-    int recv_fin; // 0 if false 1 if true
-    int is_active; // 0 if not active 1 if active
-    int sent_ack; //0 if false, 1 if true
-    int sent_fin;
-    int fin_ack; // 0 for false, 1 for true
+    ctx->seq = 0;
+    ctx->recv_window_size = htons(WIN_SIZE);
+    ctx->recv_next_byte = 0;
+    ctx->recv_prev_byte = 0;
+    ctx->peer_seq = 0;
+    ctx->win_begin = 0;
+    ctx->prev_ack = 0;
+    ctx->recv_fin = 0;
+    if (is_active) {
+        ctx->is_active = 1;
+    } else {
+        ctx->is_active = 0;
+    }
+    ctx->sent_ack = 0;
+    ctx->sent_fin = 0;
+    ctx->fin_ack = 0;
 
 
 
