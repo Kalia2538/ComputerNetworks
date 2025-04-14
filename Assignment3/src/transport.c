@@ -331,7 +331,7 @@ static event_hdr_t* wait_for_packet(mysocket_t sd, context_t *context) {
     char buff[sizeof(STCPHeader)]; // TODO: shoudl this be sctp_mss???
     event_hdr_t * ret = (event_hdr_t *)malloc(sizeof(event_hdr_t));
     ret->event = -2;
-    return ret;
+    // return ret;
 
     // TODO: Error check this malloc call
     while (1) {
