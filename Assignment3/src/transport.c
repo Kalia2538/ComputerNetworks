@@ -151,7 +151,11 @@ void transport_init(mysocket_t sd, bool_t is_active)
                 // check for SYN & ACK (ignore other flags) and seq nums
 
                 // TODO: make this a helper function (synack_update_context)for readability
-                if (((header->th_flags & (TH_SYN | TH_ACK)) == (TH_SYN | TH_ACK)) && (((tcp_seq)ntohl(header->th_ack)) == ctx->seq)) {
+                int v1 = ((header->th_flags & (TH_SYN | TH_ACK)) == (TH_SYN | TH_ACK));
+                printf("%d\n", v1);
+                int v2 = ((ntohl(header->th_ack)) == ctx->seq);
+                printf("%d\n", v2);
+                if (((header->th_flags & (TH_SYN | TH_ACK)) == (TH_SYN | TH_ACK)) && ((ntohl(header->th_ack)) == ctx->seq)) {
                     // weve received a syn-ack packet
                     // set rec_window_size
                     if (ntohs(header->th_win) > 0) {
