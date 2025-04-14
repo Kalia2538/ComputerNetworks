@@ -22,7 +22,7 @@
 
 
 #define WIN_SIZE 3072 //
-#define STCPHdrSize sizeof(STCPHeader)
+// #define STCPHdrSize sizeof(STCPHeader)
 
 
 
@@ -313,14 +313,14 @@ void our_dprintf(const char *format,...)
 
 // creates and sends a packet w/ given parameters
 static ssize_t send_syn_ack(mysocket_t sd, int seq_num, unsigned int ack_num, uint8_t flag, uint16_t window){
-    STCPHeader * packet = (STCPHeader *) malloc(STCPHdrSize);
+    STCPHeader * packet = (STCPHeader *) malloc(sizeof(STCPHeader));
     packet->th_seq = htonl(seq_num);
     packet->th_ack = htonl(ack_num);
     packet->th_off = 5;
     packet->th_flags = flag;
     packet->th_win = window;
 
-    size_t val = stcp_network_send(sd, packet, STCPHdrSize);
+    size_t val = stcp_network_send(sd, packet, sizeof(STCPHeader));
     free(packet);
     return val;
 }
@@ -340,7 +340,7 @@ static event_hdr_t* wait_for_packet(mysocket_t sd, context_t *context) {
         // recieve data from the event
         ssize_t recv = stcp_network_recv(sd, buff, STCP_MSS);
 
-        if (recv < (ssize_t)STCPHdrSize) {
+        if (recv < (ssize_t)sizeof(STCPHeader)) {
             printf("[ERROR - RECV PKT]: recieved less than STCP Header Size\n");
             ret->event = -1;
             free(ret);
@@ -377,17 +377,17 @@ static void event_app(mysocket_t sd, context_t * context) {
     // convert buff to stcp hdr
     STCPHeader * rec_hdr = (STCPHeader * ) buff;
 
-    STCPHeader * ack_hdr = (STCPHeader *) malloc(STCPHdrSize);
+    STCPHeader * ack_hdr = (STCPHeader *) malloc(sizeof(STCPHeader));
     ack_hdr->th_seq = htonl(context->seq);
     ack_hdr->th_ack = htonl(context->recv_next_byte);
     ack_hdr->th_off = 5;
     ack_hdr->th_flags = TH_ACK;
     ack_hdr->th_win = htons(WIN_SIZE - (context->recv_next_byte - context->recv_prev_byte));
 
-    char * msg = (char *) malloc(STCPHdrSize + rec_size);
-    memcpy(msg, ack_hdr, STCPHdrSize);
-    memcpy(msg + STCPHdrSize, rec_hdr, rec_size);
-    stcp_network_send(sd, msg, STCPHdrSize + rec_size);
+    char * msg = (char *) malloc(sizeof(STCPHeader) + rec_size);
+    memcpy(msg, ack_hdr, sizeof(STCPHeader));
+    memcpy(msg + sizeof(STCPHeader), rec_hdr, rec_size);
+    stcp_network_send(sd, msg, sizeof(STCPHeader) + rec_size);
     context->seq += rec_size;
 
     free(ack_hdr);
@@ -398,10 +398,10 @@ static void event_app(mysocket_t sd, context_t * context) {
 }
 
 static void event_ntwrk(mysocket_t sd, context_t * context) {
-    size_t max_size = STCP_MSS + STCPHdrSize;
+    size_t max_size = STCP_MSS + sizeof(STCPHeader);
     char buff[max_size];
     ssize_t rec_size = stcp_network_recv(sd, buff, max_size);
-    size_t rec_msg_len = rec_size - STCPHdrSize;    
+    size_t rec_msg_len = rec_size - sizeof(STCPHeader);    
     STCPHeader * rec_hdr = (STCPHeader *) buff;
     context->recv_window_size = rec_hdr->th_win;
 
@@ -429,7 +429,7 @@ static void event_ntwrk(mysocket_t sd, context_t * context) {
         }
     }
     // ----
-    if (rec_size > STCPHdrSize ) {
+    if (rec_size > sizeof(STCPHeader) ) {
         // check for fin flag
         uint16_t seq_n_size = req_seq + rec_msg_len;
         if (rec_flags & TH_FIN) {
@@ -449,7 +449,7 @@ static void event_ntwrk(mysocket_t sd, context_t * context) {
         }
 
         char * msg = (char *) malloc(rec_msg_len);
-        memcpy(msg, buff + STCPHdrSize, rec_msg_len);
+        memcpy(msg, buff + sizeof(STCPHeader), rec_msg_len);
         stcp_app_send(sd, msg, rec_msg_len);
         free(msg);
 
