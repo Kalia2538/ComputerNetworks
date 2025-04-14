@@ -105,7 +105,7 @@ void transport_init(mysocket_t sd, bool_t is_active)
     generate_initial_seq_num(ctx);
     ctx->done = FALSE;
     ctx->connection_state = -1;
-    ctx->seq = 0;
+    ctx->seq = ctx->initial_sequence_num;
     ctx->recv_window_size = htons(WIN_SIZE);
     ctx->recv_next_byte = 0;
     ctx->recv_prev_byte = 0;
