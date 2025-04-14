@@ -155,6 +155,10 @@ void transport_init(mysocket_t sd, bool_t is_active)
                 printf("%d\n", v1);
                 int v2 = ((ntohl(header->th_ack)) == ctx->seq);
                 printf("%d\n", v2);
+                int v2_1 = ((ntohl(header->th_ack)) == ntohl(ctx->seq));
+                printf("%d\n", v2_1);
+                int v2_2 = (header->th_ack) == ctx->seq;
+                printf("%d\n", v2_2);
                 if (((header->th_flags & (TH_SYN | TH_ACK)) == (TH_SYN | TH_ACK)) && ((ntohl(header->th_ack)) == ctx->seq)) {
                     // weve received a syn-ack packet
                     // set rec_window_size
