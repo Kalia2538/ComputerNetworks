@@ -436,7 +436,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
 void create_arp_reply(uint8_t * packet, struct sr_if * interface, unsigned char * tha, uint32_t tip) {
   sr_ethernet_hdr_t * eth_hdr = (sr_ethernet_hdr_t * ) packet;
-  memcpy(eth_hdr->ether_dhost, eth_hdr->ether_shost, 6);
+  memcpy(eth_hdr->ether_dhost, tha, 6);
   memcpy(eth_hdr->ether_shost, interface->addr, 6);
   eth_hdr->ether_type = htons(ethertype_arp);
   
