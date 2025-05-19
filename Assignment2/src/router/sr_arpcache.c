@@ -200,7 +200,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             // sr_get_interface(sr, entry->name);
             
             sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *) new_request;
-            memcpy(new_eth_hdr->ether_dhost, 0xFF, ETHER_ADDR_LEN);
+            memset(new_eth_hdr->ether_dhost, 0xFF, ETHER_ADDR_LEN);
             memcpy(new_eth_hdr->ether_shost, interface->addr, ETHER_ADDR_LEN);
             new_eth_hdr->ether_type = htons(ethertype_arp);
 
