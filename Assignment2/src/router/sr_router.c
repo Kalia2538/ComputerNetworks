@@ -165,13 +165,15 @@ void sr_handlepacket(struct sr_instance* sr,
         return;
       }
 
-        iphdr->ip_sum = hdr_sum;
-        struct sr_if *iface = get_interface_from_ip(sr, ntohl(iphdr->ip_dst));
+      iphdr->ip_sum = hdr_sum;
+      struct sr_if *iface = get_interface_from_ip(sr, ntohl(iphdr->ip_dst));
+      if (iface) {
+        printf("IFACE IS NOT NULL\n");
 
-        if (iface) {
-          printf("Matched interface: %s with IP: %s\n", iface->name, inet_ntoa(*(struct in_addr*)&iface->ip));
-      } else {
-          printf("No interface matched for IP: %s\n", inet_ntoa(*(struct in_addr*)&iphdr->ip_dst));
+      }
+      if (iface == NULL) {
+        printf("IFACE HAS BEEN FOUND... IR REPEART... IM NOT GONN REPEAT\n");
+
       }
     
 
