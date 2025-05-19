@@ -125,11 +125,13 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             uint8_t * new_request = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
             memset(new_request, 0, sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
             // instantiate ethernet header
-            struct sr_if * match = find_rt_dest(sr, request->ip);
-            if (match == NULL) {
-                printf("interface not found \n");
+            struct sr_rt * match_entry = find_rt_dest(sr, request->ip);
+            
+            if (match_entry == NULL) {
+                printf("entry not found \n");
                 return;
             }
+            struct sr_if * match = sr_get_interface(sr, match_entry->interface);
 
             // struct sr_if * interface = sr_get_interface(sr, match->name);
             // if (interface == NULL) {}
