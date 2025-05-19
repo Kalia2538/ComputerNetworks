@@ -131,13 +131,14 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 return;
             }
 
-            struct sr_if * interface = sr_get_interface(sr, match->name);
+            // struct sr_if * interface = sr_get_interface(sr, match->name);
+            // if (interface == NULL) {}
             // sr_get_interface(sr, entry->name);
 
             
             sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *) new_request;
             memset(new_eth_hdr->ether_dhost, 0xFF, ETHER_ADDR_LEN);
-            memcpy(new_eth_hdr->ether_shost, interface->addr, ETHER_ADDR_LEN);
+            memcpy(new_eth_hdr->ether_shost, match->addr, ETHER_ADDR_LEN);
             new_eth_hdr->ether_type = htons(ethertype_arp);
 
             // copy over the ethernet header
@@ -150,8 +151,8 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             new_arp_hdr->ar_hln = ETHER_ADDR_LEN; // assuming this variable should be the same as last time
             new_arp_hdr->ar_pln = 0x04;
             new_arp_hdr->ar_op = htons(arp_op_request);
-            memcpy(new_arp_hdr->ar_sha, interface->addr, ETHER_ADDR_LEN);
-            new_arp_hdr->ar_sip = interface->ip;
+            memcpy(new_arp_hdr->ar_sha, match->addr, ETHER_ADDR_LEN);
+            new_arp_hdr->ar_sip = match->ip;
             memset(new_arp_hdr->ar_tha, 0xFF, ETHER_ADDR_LEN);
             new_arp_hdr->ar_tip = request->ip; // DC THIS
 
@@ -162,7 +163,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             printf("packet(new_request) to be sent \n");
             print_hdrs(new_request, length);
             // send the packet
-            sr_send_packet(sr, new_request, length, interface->name);
+            sr_send_packet(sr, new_request, length, match->name);
             free(new_request);
         }
     }
