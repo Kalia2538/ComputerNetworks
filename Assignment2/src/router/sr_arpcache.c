@@ -151,7 +151,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             // instantiate arp header
             sr_arp_hdr_t * new_arp_hdr = (sr_arp_hdr_t*)(new_request + sizeof(sr_ethernet_hdr_t));
             new_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
-            new_arp_hdr->ar_pro = htons(ethertype_arp);
+            new_arp_hdr->ar_pro = htons(ethertype_ip);
             new_arp_hdr->ar_hln = ETHER_ADDR_LEN; // assuming this variable should be the same as last time
             new_arp_hdr->ar_pln = 0x04;
             new_arp_hdr->ar_op = htons(arp_op_request);
