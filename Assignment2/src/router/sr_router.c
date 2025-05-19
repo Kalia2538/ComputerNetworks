@@ -450,14 +450,18 @@ void sr_handlepacket(struct sr_instance* sr,
 
           struct sr_arpentry * curr = sr_arpcache_lookup(&sr->cache, nh_ip);
           if (curr != NULL) { // info in the cache
+            printf("found in the cache\n");
 
             // quick update of eth hdr
             memcpy(eth_hdr->ether_dhost, curr->mac, ETHER_ADDR_LEN);
             memcpy(eth_hdr->ether_shost, o_face->addr, ETHER_ADDR_LEN);
+            printf("to be sent\n");
+            print_hdrs(packet, len);
             sr_send_packet(sr, packet, len, o_face->name); // DC: THESE VALUES
             return;
           } else { // info not in the cache
             // DC: sending an arp request???
+            printf("entering handle arpreq\n");
             struct sr_arpreq * req = sr_arpcache_queuereq(&sr->cache, nh_ip, packet, len, match->interface);
             handle_arpreq(sr, req);
           }
