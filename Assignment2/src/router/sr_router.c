@@ -166,7 +166,9 @@ void sr_handlepacket(struct sr_instance* sr,
       }
 
       iphdr->ip_sum = hdr_sum;
-      
+      printf("%u\n", iphdr->ip_dst);
+      int num = ntohl(iphdr->ip_dst);
+      printf("%d\n", num);
       struct sr_if *iface = get_interface_from_ip(sr, ntohl(iphdr->ip_dst));
 
       if (iface != NULL) { // addressed to us
