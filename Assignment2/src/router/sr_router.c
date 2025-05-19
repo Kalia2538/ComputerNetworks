@@ -187,8 +187,11 @@ void sr_handlepacket(struct sr_instance* sr,
           if (cksum(icmp_hdr, sizeof(sr_icmp_hdr_t))!= icmp_sum) {
             printf("ICMP cksum fail\n");
           }
+          printf("passed icmp csum\n");
+
 
           if (icmp_hdr->icmp_type == 8) {
+            printf("we have ICMP type 8\n");
             // malloc size of ethernet header + ip header + icmp header
             uint8_t * icmp_msg = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
             if (icmp_msg == NULL) {
@@ -240,7 +243,8 @@ void sr_handlepacket(struct sr_instance* sr,
 
             
             // send the packet
-            
+            printf("ICMP Packet to be sent\n");
+            print_hdrs(icmp_msg, packet_length);
             sr_send_packet(sr, icmp_msg, packet_length, interface);
           }
           return;
