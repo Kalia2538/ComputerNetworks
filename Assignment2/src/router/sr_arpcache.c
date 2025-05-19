@@ -107,7 +107,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 // send the packet
                 
                 sr_send_packet(sr, icmp_msg, packet_length, iface->name);
-
+                curr = curr->next;
             }
 
         } else {
