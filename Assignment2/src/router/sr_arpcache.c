@@ -35,7 +35,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
     time_t now;
     time(&now);
     // check if it has been more than a second since this request was last sent
-    if (difftime(now, request->sent) > 1.0) {
+    if (difftime(now, request->sent) >= 1.0) {
         // check # of times req was sent b4
         if (request->times_sent >= 5) {
             // we've sent this request the max # of times -> need to send ICMP messages
