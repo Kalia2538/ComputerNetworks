@@ -216,7 +216,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             new_arp_hdr->ar_op = htons(arp_op_request);
             memcpy(new_arp_hdr->ar_sha, interface->addr, ETHER_ADDR_LEN);
             new_arp_hdr->ar_sip = interface->ip;
-            memcpy(new_arp_hdr->ar_tha, 0xFF, ETHER_ADDR_LEN);
+            memset(new_arp_hdr->ar_tha, 0xFF, ETHER_ADDR_LEN);
             new_arp_hdr->ar_tip = request->ip; // DC THIS
 
             // copy over the new arp header
