@@ -71,7 +71,8 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 sr_icmp_hdr_t *new_hdr_icmp = (sr_icmp_hdr_t *)(icmp_msg + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
                 
                 new_hdr_icmp->icmp_type = 3;
-                new_hdr_icmp->icmp_sum = 1;
+                new_hdr_icmp->icmp_code = 1;
+                new_hdr_icmp->icmp_sum = 0;
                 // update icmp data
                 memcpy(new_hdr_icmp->data, pkt_iphdr, sizeof(sr_ip_hdr_t) + 8 );
     
@@ -94,10 +95,10 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 // do i need to update new_ip_hdr->id?
                 
                 // set the ethernet header
-                struct sr_if * our_iface = sr_get_interface(sr, iface);
+                // struct sr_if * our_iface = sr_get_interface(sr, iface);
                 sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t*) (icmp_msg);
                 memcpy(new_eth_hdr->ether_dhost, pkt_ethhdr->ether_shost, ETHER_ADDR_LEN);
-                memcpy(new_eth_hdr->ether_shost, our_iface->addr, ETHER_ADDR_LEN);
+                memcpy(new_eth_hdr->ether_shost, iface->addr, ETHER_ADDR_LEN);
                 new_eth_hdr->ether_type = htons(ethertype_ip);
                 
                 printf("icmp msg\n");
@@ -109,6 +110,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 sr_send_packet(sr, icmp_msg, packet_length, iface->name);
                 curr = curr->next;
             }
+            sr_arpreq_destroy(&(sr->cache), request);
 
         } else {
             if (request->sent == 0) {
@@ -124,6 +126,10 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             memset(new_request, 0, sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
             // instantiate ethernet header
             struct sr_if * interface = find_rt_dest(sr, request->ip);
+            if (interface == NULL) {
+                printf("interface not found \n");
+                return;
+            }
             // sr_get_interface(sr, entry->name);
             
             sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *) new_request;
