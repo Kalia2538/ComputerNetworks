@@ -175,8 +175,10 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             }
             free(new_request);
         }
+    } else {    
+        printf("it has not been a second...do nothing\n");
     }
-    printf("it has not been a second...do nothing\n");
+    
 }
 
 /* You should not need to touch the rest of this code. */
