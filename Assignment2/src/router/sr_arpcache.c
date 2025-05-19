@@ -194,7 +194,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             
             // allocate
             uint8_t * new_request = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
-
+            memset(new_request, 0, sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
             // instantiate ethernet header
             struct sr_if * interface = find_rt_dest(sr, request->ip);
             // sr_get_interface(sr, entry->name);
