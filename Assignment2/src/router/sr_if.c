@@ -61,34 +61,24 @@ struct sr_if* sr_get_interface(struct sr_instance* sr, const char* name)
  *
  *---------------------------------------------------------------------*/
 
-struct sr_if *get_interface_from_ip(struct sr_instance *sr, uint32_t ip_address)
-{
-  struct sr_if *cur_iface = sr->if_list;
-  struct sr_if *dest_iface = NULL;
-  
-  printf("%d\n", ip_address);
-  while (cur_iface)
-  {
-    printf("Checking interface %s with IP: 0x%d\n", cur_iface->name, cur_iface->ip);
-    struct in_addr iface_ip;
-    iface_ip.s_addr = htonl(cur_iface->ip);
-    printf("Interface readable IP: %s\n", inet_ntoa(iface_ip));
-    if (ip_address == cur_iface->ip)
-    {
-      printf("Match found: interface %s\n", cur_iface->name);
-      dest_iface = cur_iface;
-      break;
-    }
-    cur_iface = cur_iface->next;
-  }
-
-  if (!dest_iface)
-  {
-    printf("No matching interface found.\n");
-  }
-
-  return dest_iface;
-} /* -- sr_get_interface_from_ip -- */
+ struct sr_if *get_interface_from_ip(struct sr_instance *sr, uint32_t ip_address)
+ {
+   struct sr_if *cur_iface = sr->if_list;
+   struct sr_if *dest_iface = NULL;
+   while (cur_iface)
+   {
+    printf("ip address: %u \n",ip_address);
+    printf("cur_iface->ip: %u \n",cur_iface->ip);
+     if (ip_address == cur_iface->ip)
+     {
+       dest_iface = cur_iface;
+       break;
+     }
+     cur_iface = cur_iface->next;
+   }
+   return dest_iface;
+ } /* -- sr_get_interface_from_ip -- */
+ 
 
 /*---------------------------------------------------------------------
  * Method: sr_get_interface_from_eth
