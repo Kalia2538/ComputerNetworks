@@ -172,7 +172,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
       }
       if (iface == NULL) {
-        printf("IFACE HAS BEEN FOUND... IR REPEART... IM NOT GONN REPEAT\n");
+        printf("IFACE HAS not been found....lmao\n");
 
       }
     
@@ -307,7 +307,7 @@ void sr_handlepacket(struct sr_instance* sr,
         if (iphdr->ip_ttl <= 0) { // true if ttl has expired
           // TODO: send ICMP type 11
           // data for ICMP  is the og packet (can copy from above)
-
+          printf("TTL HAS EXPIRED \n");
 
           uint8_t * icmp_msg = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
           unsigned int packet_length = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
@@ -345,7 +345,13 @@ void sr_handlepacket(struct sr_instance* sr,
 
           // set the ethernet header
           printf("looking up %s\n", interface);
-          struct sr_if * our_iface = sr_get_interface(sr, interface);
+          struct sr_if * our_iface = sr_get_interface(sr, interface); 
+          int isHere = 0;
+          if (our_iface) {
+            isHere = 100;
+          }
+
+          printf("moement of truth: %d\n", isHere);
           sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t*) (icmp_msg);
           memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
           memcpy(new_eth_hdr->ether_shost, our_iface->addr, ETHER_ADDR_LEN);
