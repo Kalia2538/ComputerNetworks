@@ -336,7 +336,7 @@ void sr_handlepacket(struct sr_instance* sr,
           new_ip_hdr->ip_ttl = INIT_TTL;
           new_ip_hdr->ip_p = ip_protocol_icmp;
           new_ip_hdr->ip_sum = 0;
-          new_ip_hdr->ip_src = iface->ip; // DC: is this okay
+          new_ip_hdr->ip_src =  NULL;///iface->ip; // DC: is this okay
           new_ip_hdr->ip_dst = iphdr->ip_src;
           uint16_t ip_sum = cksum(new_ip_hdr, sizeof(sr_ip_hdr_t));
           new_ip_hdr->ip_sum = ip_sum;
