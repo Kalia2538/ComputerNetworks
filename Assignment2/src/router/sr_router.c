@@ -375,6 +375,11 @@ void sr_handlepacket(struct sr_instance* sr,
        
         // find the match dest ip in routing table
         struct sr_rt * match = find_rt_dest(sr, iphdr->ip_dst);
+        if (match) {
+          printf("we found a match from f_rt_d\n");
+        } else {
+          printf("no match found from f-rt-dst\n");
+        }
         if (match == NULL) {
           // TODO: send ICMP type 3 code 3
           /////////////////////////////////////////////////
@@ -432,7 +437,7 @@ void sr_handlepacket(struct sr_instance* sr,
           return;
         } else {
 
-          struct sr_rt * match = find_rt_dest(sr, iphdr->ip_dst);
+          // struct sr_rt * match = find_rt_dest(sr, iphdr->ip_dst);
           uint32_t nh_ip = match->gw.s_addr;
           if (nh_ip == 0) { // DC this
             nh_ip = iphdr->ip_dst;
