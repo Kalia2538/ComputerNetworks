@@ -55,7 +55,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 }
                 // send an icmp message
 
-                uint8_t * icmp_msg = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
+                uint8_t * icmp_msg = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t) + 8);
                 if (icmp_msg == NULL) {
                 printf("malloc failed\n");
                 return;
@@ -130,6 +130,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 printf("interface not found \n");
                 return;
             }
+
             struct sr_if * interface = sr_get_interface(sr, match->name);
             // sr_get_interface(sr, entry->name);
 
