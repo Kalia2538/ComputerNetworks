@@ -119,7 +119,7 @@ void sr_handlepacket(struct sr_instance* sr,
         // "drop it" --> does that mean do nothing???
       } else if (ntohs(arphdr->ar_op) == arp_op_reply) {
         printf("now we have a reply(allegedly) %u\n", ntohs(arphdr->ar_op));
-        
+        printf("looking up %s\n", interface);
         struct sr_if * iface = sr_get_interface(sr, interface);
         // cache the reply
         // check if in the cache already has the reply entry
@@ -218,7 +218,9 @@ void sr_handlepacket(struct sr_instance* sr,
             // do i need to update new_ip_hdr->id?
             
             // set the ethernet header
+            printf("looking up %s\n", interface);
             struct sr_if * our_iface = sr_get_interface(sr, interface);
+            
             sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t*) (icmp_msg);
             memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
             memcpy(new_eth_hdr->ether_shost, our_iface->addr, ETHER_ADDR_LEN);
@@ -270,6 +272,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
 
           // set the ethernet header
+          printf("looking up %s\n", interface);
           struct sr_if * our_iface = sr_get_interface(sr, interface);
           sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t*) (icmp_msg);
           memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
@@ -328,6 +331,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
 
           // set the ethernet header
+          printf("looking up %s\n", interface);
           struct sr_if * our_iface = sr_get_interface(sr, interface);
           sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t*) (icmp_msg);
           memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
@@ -393,6 +397,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
 
           // set the ethernet header
+          printf("looking up %s\n", interface);
           struct sr_if * our_iface = sr_get_interface(sr, interface);
           sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t*) (icmp_msg);
           memcpy(new_eth_hdr->ether_dhost, eth_hdr->ether_shost, ETHER_ADDR_LEN);
@@ -414,6 +419,7 @@ void sr_handlepacket(struct sr_instance* sr,
             nh_ip = iphdr->ip_dst;
           }
 
+          printf("looking up %s\n", interface);
           struct sr_if * o_face = sr_get_interface(sr, match->interface);
           // TODO: ERROR CHECK HERE?
 
