@@ -163,10 +163,16 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             printf("packet(new_request) to be sent \n");
             print_hdrs(new_request, length);
             // send the packet
-            sr_send_packet(sr, new_request, length, match->name);
+            int check = sr_send_packet(sr, new_request, length, match->name);
+            if (check > -1) {
+                printf("req was sent");
+            } else {
+                printf("error sending the arp req\n");
+            }
             free(new_request);
         }
     }
+    printf("it has not been a second...do nothing\n");
 }
 
 /* You should not need to touch the rest of this code. */
