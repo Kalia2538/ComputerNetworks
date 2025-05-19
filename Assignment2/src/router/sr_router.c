@@ -465,6 +465,38 @@ void create_arp_reply(uint8_t * packet, struct sr_if * interface, unsigned char 
   arp_hdr->ar_sip = interface->ip;
   memcpy(arp_hdr->ar_tha, tha, ETHER_ADDR_LEN);
   arp_hdr->ar_tip = tip;  
+
+
+
+
+  // Debug print statements to verify the packet contents
+  printf("Created ARP reply packet:\n");
+  printf("Ethernet Header:\n");
+  printf("  Dest MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+         eth_hdr->ether_dhost[0], eth_hdr->ether_dhost[1], eth_hdr->ether_dhost[2],
+         eth_hdr->ether_dhost[3], eth_hdr->ether_dhost[4], eth_hdr->ether_dhost[5]);
+  printf("  Src MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+         eth_hdr->ether_shost[0], eth_hdr->ether_shost[1], eth_hdr->ether_shost[2],
+         eth_hdr->ether_shost[3], eth_hdr->ether_shost[4], eth_hdr->ether_shost[5]);
+  printf("  EtherType: 0x%04x\n", ntohs(eth_hdr->ether_type));
+  
+
+  printf("ARP Header:\n");
+  printf("  Hardware type: %d\n", ntohs(arp_hdr->ar_hrd));
+  printf("  Protocol type: 0x%04x\n", ntohs(arp_hdr->ar_pro));
+  printf("  Hardware size: %d\n", arp_hdr->ar_hln);
+  printf("  Protocol size: %d\n", arp_hdr->ar_pln);
+  printf("  Opcode: %d\n", ntohs(arp_hdr->ar_op));
+  printf("  Sender MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+         arp_hdr->ar_sha[0], arp_hdr->ar_sha[1], arp_hdr->ar_sha[2],
+         arp_hdr->ar_sha[3], arp_hdr->ar_sha[4], arp_hdr->ar_sha[5]);
+  struct in_addr sip_addr = { arp_hdr->ar_sip };
+  printf("  Sender IP: %s\n", inet_ntoa(sip_addr));
+  printf("  Target MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+         arp_hdr->ar_tha[0], arp_hdr->ar_tha[1], arp_hdr->ar_tha[2],
+         arp_hdr->ar_tha[3], arp_hdr->ar_tha[4], arp_hdr->ar_tha[5]);
+  struct in_addr tip_addr = { arp_hdr->ar_tip };
+  printf("  Target IP: %s\n", inet_ntoa(tip_addr));
 }
 
 
