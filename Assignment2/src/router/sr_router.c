@@ -84,11 +84,16 @@ void sr_handlepacket(struct sr_instance* sr,
   // TODO: Do i need to check if the ethernet header is properly formatted?
   switch (ethertype(packet)) {
     case ethertype_arp: { // arp
+      if (len < sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t)) {
+        fprintf(stderr, "pkt len too short for arp\n");
+        return;
+      }
       sr_arp_hdr_t *arphdr = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
       // TODO: make sure the arp is well formatted
       if (ntohs(arphdr->ar_op)  == arp_op_request) {
-        struct sr_if * iface = sr_get_interface(sr, interface);
-        if (iface != NULL && arphdr->ar_tip == iface->ip) { // addressed to us
+        // struct sr_if * iface = sr_get_interface(sr, interface);
+        struct sr_if * iface = get_interface_from_ip(sr, arphdr->ar_tip);
+        if (iface != NULL && arphdr->ar_tip == iface->ip) { // addressed to us // also redundant tbh
           // allocate space for the newly created reply
           uint8_t * reply = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
           if (reply == NULL) {
@@ -105,10 +110,8 @@ void sr_handlepacket(struct sr_instance* sr,
           printf("if 0, sending was successfull (allegedly): %d\n", check);
           // free the reply
           free(reply);
-          break;
         } else {
           printf("target == NULL...dropping the packet\n");
-          break;
         }
         break;
         
@@ -138,13 +141,12 @@ void sr_handlepacket(struct sr_instance* sr,
             print_hdrs(curr_pkt->buf, curr_pkt->len);
 
             // sr_send the packet
-            sr_send_packet(sr, curr_pkt->buf, curr_pkt->len, iface);
+            sr_send_packet(sr, curr_pkt->buf, curr_pkt->len, iface->name);
 
             curr_pkt = curr_pkt->next;
           }
             // send the IP packets waiting on this request
           sr_arpreq_destroy(&sr->cache, in_cache);            
-          // free(in_cache); // TODO: double check if this is needed or not
         } 
         
         break;
@@ -159,6 +161,7 @@ void sr_handlepacket(struct sr_instance* sr,
       iphdr->ip_sum = 0;
       if (cksum(iphdr, sizeof(sr_ip_hdr_t)) != hdr_sum) {
         printf("checksum fail\n");
+        return;
       }
 
       iphdr->ip_sum = hdr_sum;
@@ -167,8 +170,15 @@ void sr_handlepacket(struct sr_instance* sr,
 
       if (iface != NULL) { // addressed to us
         if (iphdr->ip_p == ip_protocol_icmp) { // it is an ICMP
-          sr_icmp_hdr_t * icmp_hdr = (sr_icmp_hdr_t *)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_icmp_hdr_t));
+          sr_icmp_hdr_t * icmp_hdr = (sr_icmp_hdr_t *)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
           // TO UPDATE: DO WE NEED TO CHECK ICMP CHECKSUM HERE TOO
+          
+          uint16_t icmp_sum = icmp_hdr->icmp_sum;
+          icmp_hdr->icmp_sum = 0;
+          if (cksum(icmp_hdr, sizeof(sr_icmp_hdr_t))!= icmp_sum) {
+            printf("ICMP cksum fail\n");
+          }
+
           if (icmp_hdr->icmp_type == 8) {
             // malloc size of ethernet header + ip header + icmp header
             uint8_t * icmp_msg = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t));
@@ -197,7 +207,7 @@ void sr_handlepacket(struct sr_instance* sr,
             sr_ip_hdr_t *new_ip_hdr = (sr_ip_hdr_t *) (icmp_msg + sizeof(sr_ethernet_hdr_t));
             new_ip_hdr->ip_tos = iphdr->ip_tos; // do i need to use memcpy here?
             // memcpy(new_ip_hdr->ip_tos, iphdr->ip_tos, 8); // DC: do i put 8 bytes for this?
-            new_ip_hdr->ip_len = htons(sizeof(packet - sizeof(sr_ethernet_hdr_t)));
+            new_ip_hdr->ip_len = htons(sizeof(packet) - sizeof(sr_ethernet_hdr_t));
             new_ip_hdr->ip_ttl = INIT_TTL;
             new_ip_hdr->ip_p = ip_protocol_icmp;
             new_ip_hdr->ip_sum = 0;
@@ -408,14 +418,13 @@ void sr_handlepacket(struct sr_instance* sr,
           // TODO: ERROR CHECK HERE?
 
 
-          struct sr_arpentry * curr = sr_arpcache_lookup(&sr->cache, iphdr->ip_dst);
+          struct sr_arpentry * curr = sr_arpcache_lookup(&sr->cache, nh_ip);
           if (curr != NULL) { // info in the cache
 
             // quick update of eth hdr
             memcpy(eth_hdr->ether_dhost, curr->mac, ETHER_ADDR_LEN);
             memcpy(eth_hdr->ether_shost, o_face->addr, ETHER_ADDR_LEN);
             sr_send_packet(sr, packet, len, o_face->name); // DC: THESE VALUES
-            free(packet);
             return;
           } else { // info not in the cache
             // DC: sending an arp request???

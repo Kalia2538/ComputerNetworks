@@ -84,7 +84,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 sr_ip_hdr_t *new_ip_hdr = (sr_ip_hdr_t *) (icmp_msg + sizeof(sr_ethernet_hdr_t));
                 new_ip_hdr->ip_tos = pkt_iphdr->ip_tos; // do i need to use memcpy here?
                 // memcpy(new_ip_hdr->ip_tos, iphdr->ip_tos, 8); // DC: do i put 8 bytes for this?
-                new_ip_hdr->ip_len = htons(sizeof(packet ) - sizeof(sr_ethernet_hdr_t));
+                new_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t ) - sizeof(sr_icmp_hdr_t));
                 new_ip_hdr->ip_ttl = INIT_TTL;
                 new_ip_hdr->ip_p = ip_protocol_icmp;
                 new_ip_hdr->ip_sum = 0;
