@@ -48,7 +48,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 sr_icmp_hdr_t * pkt_icmphdr = (sr_icmp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
 
                 uint8_t * pkteth = pkt_ethhdr->ether_dhost;
-                struct sr_if * iface = get_interface_from_eth(sr, pkteth);
+                struct sr_if * iface = sr_get_interface(sr, curr->iface);
                 if (iface == NULL) {
                     curr = curr->next;
                     continue;
@@ -61,7 +61,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 return;
                 }            
                 
-                unsigned int packet_length = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t);
+                unsigned int packet_length = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_hdr_t) + 8;
                 // initialize to 0
                 memset(icmp_msg, 0, packet_length);
 
@@ -77,14 +77,14 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
                 memcpy(new_hdr_icmp->data, pkt_iphdr, sizeof(sr_ip_hdr_t) + 8 );
     
     
-                uint16_t i_sum = cksum(new_hdr_icmp, packet_length - sizeof(sr_ip_hdr_t) - sizeof(sr_ethernet_hdr_t));
+                uint16_t i_sum = cksum(new_hdr_icmp, sizeof(sr_icmp_hdr_t) + 8);
                 new_hdr_icmp->icmp_sum = i_sum;
     
                 // set the ip header
                 sr_ip_hdr_t *new_ip_hdr = (sr_ip_hdr_t *) (icmp_msg + sizeof(sr_ethernet_hdr_t));
                 new_ip_hdr->ip_tos = pkt_iphdr->ip_tos; // do i need to use memcpy here?
                 // memcpy(new_ip_hdr->ip_tos, iphdr->ip_tos, 8); // DC: do i put 8 bytes for this?
-                new_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t ) - sizeof(sr_icmp_hdr_t));
+                new_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t ) + sizeof(sr_icmp_hdr_t) + 8);
                 new_ip_hdr->ip_ttl = INIT_TTL;
                 new_ip_hdr->ip_p = ip_protocol_icmp;
                 new_ip_hdr->ip_sum = 0;
@@ -125,12 +125,14 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *request) {
             uint8_t * new_request = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
             memset(new_request, 0, sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
             // instantiate ethernet header
-            struct sr_if * interface = find_rt_dest(sr, request->ip);
-            if (interface == NULL) {
+            struct sr_if * match = find_rt_dest(sr, request->ip);
+            if (match == NULL) {
                 printf("interface not found \n");
                 return;
             }
+            struct sr_if * interface = sr_get_interface(sr, match->name);
             // sr_get_interface(sr, entry->name);
+
             
             sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *) new_request;
             memset(new_eth_hdr->ether_dhost, 0xFF, ETHER_ADDR_LEN);
