@@ -92,7 +92,8 @@ void sr_handlepacket(struct sr_instance* sr,
       // TODO: make sure the arp is well formatted
       if (ntohs(arphdr->ar_op)  == arp_op_request) {
         // struct sr_if * iface = sr_get_interface(sr, interface);
-        struct sr_if * iface = get_interface_from_ip(sr, arphdr->ar_tip);
+        
+        struct sr_if * iface = sr_get_interface(sr, interface);
         if (iface != NULL && arphdr->ar_tip == iface->ip) { // addressed to us // also redundant tbh
           // allocate space for the newly created reply
           uint8_t * reply = (uint8_t *)malloc(sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t));
