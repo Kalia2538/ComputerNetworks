@@ -172,7 +172,7 @@ void sr_handlepacket(struct sr_instance* sr,
 
       }
       if (iface == NULL) {
-        printf("IFACE HAS not been found....lmao\n");
+        printf("IFACE HAS not been found\n");
 
       }
     
