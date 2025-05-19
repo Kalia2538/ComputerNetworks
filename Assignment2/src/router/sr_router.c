@@ -468,9 +468,12 @@ void sr_handlepacket(struct sr_instance* sr,
         }
 
       }
-
+      break;
     }
-    break;
+    default: {
+      printf("the default case ig");
+      return;
+    }
   }
   // need to determine if this is an ip or arp packet
   
