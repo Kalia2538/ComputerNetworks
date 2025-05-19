@@ -445,6 +445,9 @@ void sr_handlepacket(struct sr_instance* sr,
 
           printf("looking up %s\n", interface);
           struct sr_if * o_face = sr_get_interface(sr, match->interface);
+          if (o_face) {
+            printf("found oface\n");
+          }
           // TODO: ERROR CHECK HERE?
 
 
